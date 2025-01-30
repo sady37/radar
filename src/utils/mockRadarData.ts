@@ -1,6 +1,6 @@
 // src/utils/mockRadarData.ts
-import type { PersonData, VitalSignData } from '../stores/types';
-import { PersonEvent, SleepState } from '../stores/types';
+import type { PersonData, VitalSignData } from "../stores/types";
+import { PersonEvent, SleepState } from "../stores/types";
 
 export class MockRadarService {
   private timer: number | null = null;
@@ -62,7 +62,7 @@ export class MockRadarService {
 
   startMockDataStream(
     onTrackData: (data: PersonData[]) => void,
-    onVitalData: (data: VitalSignData) => void
+    onVitalData: (data: VitalSignData) => void,
   ): void {
     const trackTimer = window.setInterval(() => {
       const trackData = this.generateMockTrackData();
@@ -103,7 +103,7 @@ export class MockRadarService {
 
     const totalWeight = probabilities.reduce(
       (sum, item) => sum + item.weight,
-      0
+      0,
     );
     let random = Math.random() * totalWeight;
 

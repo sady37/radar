@@ -7,8 +7,8 @@
 	  </div>
 	  <canvas 
 		ref="canvasRef" 
-		:width= "canvasStore.width" 
-		:height="canvasStore.height"
+		:width="620"  
+		:height="520"
 		@wheel="handleWheel"
 		@mousemove="handleMouseMove"
 		@mousedown="handleMouseDown"
@@ -41,8 +41,8 @@ import type { RadarObject, ObjectProperties, BoundarySettings, Point } from '../
   const mousePosition = reactive({ x: 0, y: 0 })
   const dragStartPos = reactive({ x: 0, y: 0 })
 
-  //const canvasStore.width = canvasStore.width;
-  //const canvasStore.height = canvasStore.height;
+  const canvasWidth = 620;
+  const canvasHeight = 520;
 
   // Store初始化
   const radarStore = useRadarStore()
@@ -63,11 +63,20 @@ import type { RadarObject, ObjectProperties, BoundarySettings, Point } from '../
   })
   
   // 4. 监听器
+  /*/ 监听 create-object 事件
+	const handleCreateObject = (objectData: RadarObject) => {
+	  // 将新对象添加到 objectsStore 中
+	  objectsStore.addObject(objectData);
+	  // 重新绘制画布以显示新对象
+	  redrawCanvas();
+	}
+   */
+
   watch([scale, () => objectsStore.objects, () => canvasStore.showGrid, () => canvasStore.showScale], () => {
 	const ctx = canvasRef.value?.getContext('2d')
 	if (!ctx) return
 	
-	ctx.clearRect(0, 0, canvasStore.width, canvasStore.height)
+	ctx.clearRect(0, 0, canvasWidth, canvasHeight)
 	drawCoordinateSystem(ctx)
 	drawObjects(ctx)
   }, { deep: true })
@@ -76,7 +85,7 @@ import type { RadarObject, ObjectProperties, BoundarySettings, Point } from '../
 	const ctx = canvasRef.value?.getContext('2d')
 	if (!ctx) return
 	
-	ctx.clearRect(0, 0, canvasStore.width, canvasStore.height)
+	ctx.clearRect(0, 0, canvasWidth, canvasHeight)
 	drawCoordinateSystem(ctx)
 	drawObjects(ctx)
   })
@@ -92,7 +101,7 @@ import type { RadarObject, ObjectProperties, BoundarySettings, Point } from '../
   watch(() => radarDataStore.currentPersons, () => {
 	  const ctx = canvasRef.value?.getContext('2d')
 	  if (ctx) {
-	    ctx.clearRect(0, 0, canvasStore.width, canvasStore.height)
+	    ctx.clearRect(0, 0, canvasWidth, canvasHeight)
 	    drawCoordinateSystem(ctx)
 	    drawObjects(ctx)
 	   }
@@ -114,7 +123,7 @@ import type { RadarObject, ObjectProperties, BoundarySettings, Point } from '../
     const ctx = canvasRef.value?.getContext('2d')
     if (!ctx) return
   
-    ctx.clearRect(0, 0, canvasStore.width, canvasStore.height)
+    ctx.clearRect(0, 0, canvasWidth, canvasHeight)
     drawCoordinateSystem(ctx)
     drawObjects(ctx)
   }
@@ -142,7 +151,7 @@ import type { RadarObject, ObjectProperties, BoundarySettings, Point } from '../
       const canvasY = event.clientY - rect.top;
 
       // 考虑缩放比例，转换为逻辑坐标
-      const logicalX = Math.round((canvasX-(canvasStore.width/2)) / scale.value);
+      const logicalX = Math.round((canvasX-(canvasWidth/2)) / scale.value);
       const logicalY = Math.round(canvasY / scale.value);
 
       mouseStore.updatePosition(logicalX, logicalY);
@@ -162,7 +171,7 @@ import type { RadarObject, ObjectProperties, BoundarySettings, Point } from '../
     const canvasY = event.clientY - rect.top;
 
     // 考虑缩放比例，转换为逻辑坐标
-    const logicalX = Math.round((canvasX-(canvasStore.width/2)) / scale.value);
+    const logicalX = Math.round((canvasX-(canvasWidth/2)) / scale.value);
     const logicalY = Math.round(canvasY / scale.value);
     
 	objectsStore.updateObject(obj.id, {
@@ -198,9 +207,11 @@ import type { RadarObject, ObjectProperties, BoundarySettings, Point } from '../
 	// 步骤1：获取鼠标在画布内的物理像素位置
 	const canvasX = event.clientX - rect.left
 	const canvasY = event.clientY - rect.top
-
+    console.log('scale.value:', scale.value);
+    console.log('canvasWidth:', canvasWidth);
+    console.log('canvasHeight:', canvasHeight);
 	// 步骤2: 考虑缩放比例，转换为逻辑坐标
-	const logicalX = Math.round((canvasX-(canvasStore.width/2)) / scale.value);
+	const logicalX = Math.round((canvasX-(canvasWidth/2)) / scale.value);
     const logicalY = Math.round(canvasY/ scale.value);
 	console.log('logicalX:', logicalX);
     console.log('logicalY:', logicalY);
@@ -245,10 +256,12 @@ import type { RadarObject, ObjectProperties, BoundarySettings, Point } from '../
   // 5.4 绘制相关
   const drawCoordinateSystem = (ctx: CanvasRenderingContext2D) => {
   // 底色和原点
+  //const canvasWidth = canvasWidth;
+  //const canvasHeight = 520;
   ctx.fillStyle = "#FFF8DC";
-  ctx.fillRect(0, 0, canvasStore.width, canvasStore.height);
+  ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
-  const originX = canvasStore.width / 2;; // 原点X坐标（画布中心）
+  const originX = canvasWidth / 2;; // 原点X坐标（画布中心）
   const originY = 0; // 原点Y坐标（画布顶部）
 
   // 绘制网格
@@ -260,10 +273,10 @@ import type { RadarObject, ObjectProperties, BoundarySettings, Point } from '../
     // 右侧网格线（包含原点）
     for (let logicX = 0; ; logicX += gridLogicSize) {
         const pixelX = originX + logicX * scale.value;
-        if (pixelX > canvasStore.width) break;
+        if (pixelX > canvasWidth) break;
         ctx.beginPath();
         ctx.moveTo(pixelX, 0);
-        ctx.lineTo(pixelX, canvasStore.height);
+        ctx.lineTo(pixelX, canvasHeight);
         ctx.stroke();
     }
     // 左侧网格线（不重复绘制原点）
@@ -272,17 +285,17 @@ import type { RadarObject, ObjectProperties, BoundarySettings, Point } from '../
         if (pixelX < 0) break;
         ctx.beginPath();
         ctx.moveTo(pixelX, 0);
-        ctx.lineTo(pixelX, canvasStore.height);
+        ctx.lineTo(pixelX, canvasHeight);
         ctx.stroke();
     }
 
     // Y 轴网格（从顶部向下，包含原点）
     for (let logicY = 0; ; logicY += gridLogicSize) {
         const pixelY = originY + logicY * scale.value;
-        if (pixelY > canvasStore.height) break;
+        if (pixelY > canvasHeight) break;
         ctx.beginPath();
         ctx.moveTo(0, pixelY);
-        ctx.lineTo(canvasStore.width, pixelY);
+        ctx.lineTo(canvasWidth, pixelY);
         ctx.stroke();
     }
   }
@@ -297,13 +310,13 @@ import type { RadarObject, ObjectProperties, BoundarySettings, Point } from '../
     // X轴刻度，保持左负右正
 	for (let logicX = 0; ; logicX += tickLogicInterval) {
             const pixelXRight = originX + logicX * scale.value;
-            if (pixelXRight > canvasStore.width) break;
+            if (pixelXRight > canvasWidth) break;
             if (logicX!== 0) {
                 ctx.textAlign = "center";
                 ctx.textBaseline = "top";
                 ctx.fillText(`+${logicX}`, pixelXRight, 5);
                 ctx.textBaseline = "bottom";
-                ctx.fillText(`+${logicX}`, pixelXRight, canvasStore.height - 5);
+                ctx.fillText(`+${logicX}`, pixelXRight, canvasHeight - 5);
             }
 
             const pixelXLeft = originX - logicX * scale.value;
@@ -312,20 +325,20 @@ import type { RadarObject, ObjectProperties, BoundarySettings, Point } from '../
                 ctx.textBaseline = "top";
                 ctx.fillText(`-${logicX}`, pixelXLeft, 5);
                 ctx.textBaseline = "bottom";
-                ctx.fillText(`-${logicX}`, pixelXLeft, canvasStore.height - 5);
+                ctx.fillText(`-${logicX}`, pixelXLeft, canvasHeight - 5);
             }
         }
 
     // Y轴刻度，上负(-)下正(+)从0开始向上递增
 	for (let logicY = 0; ; logicY += tickLogicInterval) {
             const pixelY = originY + logicY * scale.value;
-            if (pixelY > canvasStore.height) break;
+            if (pixelY > canvasHeight) break;
             ctx.textAlign = "right";
             ctx.textBaseline = "middle";
             ctx.fillText(`${logicY}`, 20, pixelY);
 
             ctx.textAlign = "left";
-            ctx.fillText(`${logicY}`, canvasStore.width - 20, pixelY);
+            ctx.fillText(`${logicY}`, canvasWidth - 20, pixelY);
         }
 
     // 原点标记
@@ -347,7 +360,7 @@ import type { RadarObject, ObjectProperties, BoundarySettings, Point } from '../
     const canvasY = event.clientY - rect.top
 
 	// 步骤2: 考虑缩放比例，转换为逻辑坐标
-	const logicalX = Math.round((canvasX-(canvasStore.width/2)) / scale.value);
+	const logicalX = Math.round((canvasX-(canvasWidth/2)) / scale.value);
     const logicalY = Math.round(canvasY / scale.value);
     
 
@@ -387,8 +400,8 @@ import type { RadarObject, ObjectProperties, BoundarySettings, Point } from '../
     ctx.save();
     // 现有的位置和旋转变换保持不变...
     ctx.translate(
-      (canvasStore.width/2) + obj.position.x * scale.value,
-      obj.position.y * scale.value,
+      (canvasWidth/2) + obj.position.x * scale.value,
+      (canvasHeight/2) + obj.position.y * scale.value,
     );
     ctx.rotate((obj.rotation * Math.PI) / 180);
     const halfLength = (obj.size.length * scale.value) / 2;
@@ -567,7 +580,7 @@ import type { RadarObject, ObjectProperties, BoundarySettings, Point } from '../
     const rect = canvasRef.value?.getBoundingClientRect();
     if (!rect) return;
 
-    const x = Math.round((event.clientX - rect.left - (canvasStore.width/2)) / scale.value); // 到中心点的X偏移
+    const x = Math.round((event.clientX - rect.left - (canvasWidth/2)) / scale.value); // 到中心点的X偏移
     const y = Math.round((event.clientY - rect.top) / scale.value); // 到顶部的Y偏移
 
     mouseStore.updatePosition(x, y);
@@ -583,7 +596,7 @@ import type { RadarObject, ObjectProperties, BoundarySettings, Point } from '../
     // 检查对象是否锁定
     if (!obj || obj.isLocked) return; // 如果对象被锁定，直接返回
 
-    const x = Math.round((event.clientX - rect.left - (canvasStore.width/2)) / scale.value);
+    const x = Math.round((event.clientX - rect.left - (canvasWidth/2)) / scale.value);
     const y = Math.round((event.clientY - rect.top) / scale.value);
 
     objectsStore.updateObject(obj.id, {
@@ -627,7 +640,7 @@ import type { RadarObject, ObjectProperties, BoundarySettings, Point } from '../
     ctx.save();
     // 现有的位置和旋转变换保持不变...
     ctx.translate(
-      (canvasStore.width/2) + obj.position.x * scale.value,
+      (canvasWidth/2) + obj.position.x * scale.value,
        obj.position.y * scale.value,
     );
     ctx.rotate((obj.rotation * Math.PI) / 180);

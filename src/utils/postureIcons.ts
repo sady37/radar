@@ -2,128 +2,142 @@
 
 // 首先定义接口
 export interface PostureIconConfig {
-	type: 'svg' | 'default'
-	iconPath?: string
-	size: number
-	showLabel: boolean
-  }
+  type: "svg" | "default";
+  iconPath?: string;
+  size: number;
+  showLabel: boolean;
+}
 
 // 批量导入所有SVG
-const icons = import.meta.glob('@/assets/icons/*.svg', { eager: true });
+const icons = import.meta.glob("@/assets/icons/*.svg", { eager: true });
 
 // 映射文件名到图标路径
-const iconMap = Object.entries(icons).reduce((acc, [path, module]) => {
-  const name = path.split('/').pop()?.replace('.svg', '');
-  if (name) {
-    acc[name] = (module as { default: string }).default;
-  }
-  return acc;
-}, {} as Record<string, string>);
+const iconMap = Object.entries(icons).reduce(
+  (acc, [path, module]) => {
+    const name = path.split("/").pop()?.replace(".svg", "");
+    if (name) {
+      acc[name] = (module as { default: string }).default;
+    }
+    return acc;
+  },
+  {} as Record<string, string>,
+);
 
 export const POSTURE_CONFIGS: Record<number, PostureIconConfig> = {
-  0: {  // Init
-    type: 'svg',
-    iconPath: iconMap['Init'],
+  0: {
+    // Init
+    type: "svg",
+    iconPath: iconMap["Init"],
     size: 43,
-    showLabel: true
+    showLabel: true,
   },
-  1: {  // Walking
-    type: 'svg',
-    iconPath: iconMap['Walking'],
+  1: {
+    // Walking
+    type: "svg",
+    iconPath: iconMap["Walking"],
     size: 43,
-    showLabel: true
+    showLabel: true,
   },
-  2: {  // FallSuspect
-    type: 'svg',
-    iconPath: iconMap['FallSuspect'],
+  2: {
+    // FallSuspect
+    type: "svg",
+    iconPath: iconMap["FallSuspect"],
     size: 43,
-    showLabel: true
+    showLabel: true,
   },
-  3: {  // Sitting
-    type: 'svg',
-    iconPath: iconMap['Sitting'],
+  3: {
+    // Sitting
+    type: "svg",
+    iconPath: iconMap["Sitting"],
     size: 43,
-    showLabel: false
+    showLabel: false,
   },
-  4: {  // LyingBed
-    type: 'svg',
-    iconPath: iconMap['LyingBed'],
+  4: {
+    // LyingBed
+    type: "svg",
+    iconPath: iconMap["LyingBed"],
     size: 43,
-    showLabel: false
+    showLabel: false,
   },
-  5: {  // FallConfirm
-    type: 'svg',
-    iconPath: iconMap['FallConfirm'],
+  5: {
+    // FallConfirm
+    type: "svg",
+    iconPath: iconMap["FallConfirm"],
     size: 43,
-    showLabel: false
+    showLabel: false,
   },
-  6: {  // Lying
-    type: 'svg',
-    iconPath: iconMap['Lying'],
+  6: {
+    // Lying
+    type: "svg",
+    iconPath: iconMap["Lying"],
     size: 43,
-    showLabel: false
+    showLabel: false,
   },
-  7: {  // SitUp
-    type: 'svg',
-    iconPath: iconMap['SitUp'],
+  7: {
+    // SitUp
+    type: "svg",
+    iconPath: iconMap["SitUp"],
     size: 43,
-    showLabel: false
+    showLabel: false,
   },
-  8: {  // SitGroundConfirm
-    type: 'svg',
-    iconPath: iconMap['SitGroundConfirm'],
+  8: {
+    // SitGroundConfirm
+    type: "svg",
+    iconPath: iconMap["SitGroundConfirm"],
     size: 43,
-    showLabel: true
+    showLabel: true,
   },
-  9: {  // SitUpBed
-    type: 'svg',
-    iconPath: iconMap['SitUpBed'],
+  9: {
+    // SitUpBed
+    type: "svg",
+    iconPath: iconMap["SitUpBed"],
     size: 43,
-    showLabel: false
+    showLabel: false,
   },
-  10: {  // SitUpBedSuspect
-    type: 'svg',
-    iconPath: iconMap['SitUpBedSuspect'],
+  10: {
+    // SitUpBedSuspect
+    type: "svg",
+    iconPath: iconMap["SitUpBedSuspect"],
     size: 43,
-    showLabel: true
+    showLabel: true,
   },
-  11: {  // SitUpBedConfirm
-    type: 'svg',
-    iconPath: iconMap['SitUpBedConfirm'],
+  11: {
+    // SitUpBedConfirm
+    type: "svg",
+    iconPath: iconMap["SitUpBedConfirm"],
     size: 43,
-    showLabel: false
-  }
+    showLabel: false,
+  },
 };
 
-
 export enum PersonPosture {
-	Init = 0,            // 初始化
-	Walking = 1,         // 行走
-	FallSuspect = 2,     // 疑似跌倒
-	Sitting = 3,         // 蹲坐
-	Standing = 4,        // 站立
-	FallConfirm = 5,     // 跌倒确认
-	Lying = 6,           // 卧
-	SitGroundSuspect = 7, // 疑似坐地
-	SitGroundConfirm = 8, // 确认坐地
-	SitUpBed = 9,        // 普通床上坐起
-	SitUpBedSuspect = 10, // 疑似床上坐起
-	SitUpBedConfirm = 11  // 确认床上坐起
-  }
+  Init = 0, // 初始化
+  Walking = 1, // 行走
+  FallSuspect = 2, // 疑似跌倒
+  Sitting = 3, // 蹲坐
+  Standing = 4, // 站立
+  FallConfirm = 5, // 跌倒确认
+  Lying = 6, // 卧
+  SitGroundSuspect = 7, // 疑似坐地
+  SitGroundConfirm = 8, // 确认坐地
+  SitUpBed = 9, // 普通床上坐起
+  SitUpBedSuspect = 10, // 疑似床上坐起
+  SitUpBedConfirm = 11, // 确认床上坐起
+}
 
 export const POSTURE_LABELS: Record<number, string> = {
-  0: 'Init',
-  1: 'Walking',
-  2: 'FallSuspect',
-  3: 'Sitting',
-  4: 'Standing',
-  5: 'FallConfirm',
-  6: 'Lying',
-  7: 'SitGroundSuspect',
-  8: 'SitGroundConfirm',
-  9: 'SitUpBed',
-  10: 'SitUpBedSuspect',
-  11: 'SitUpBedConfirm'
+  0: "Init",
+  1: "Walking",
+  2: "FallSuspect",
+  3: "Sitting",
+  4: "Standing",
+  5: "FallConfirm",
+  6: "Lying",
+  7: "SitGroundSuspect",
+  8: "SitGroundConfirm",
+  9: "SitUpBed",
+  10: "SitUpBedSuspect",
+  11: "SitUpBedConfirm",
 };
 /*
 export interface PostureIconConfig {

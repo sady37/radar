@@ -1,11 +1,11 @@
 // stores/radar.ts
-import { defineStore } from 'pinia';
-import type { Point, RadarSettings, RadarBoundary } from './types';
+import { defineStore } from "pinia";
+import type { Point, RadarSettings, RadarBoundary } from "./types";
 
-export const useRadarStore = defineStore('radar', {
+export const useRadarStore = defineStore("radar", {
   state: () => ({
     settings: {
-      mode: 'ceiling',
+      mode: "ceiling",
       height: 200,
       position: { x: 0, y: 0 },
       rotation: 0,
@@ -13,38 +13,35 @@ export const useRadarStore = defineStore('radar', {
         v1: { x: -310, y: -260 },
         v2: { x: 310, y: -260 },
         v3: { x: -310, y: 260 },
-        v4: { x: 310, y: 260 }
+        v4: { x: 310, y: 260 },
       },
       showBoundary: false,
-      showSignal: false
+      showSignal: false,
     } as RadarSettings,
-   
+
     defaultBoundary: {
       ceiling: {
         x: [-300, 300],
-        y: [-200, 200]
+        y: [-200, 200],
       },
       wall: {
         x: [-300, 300],
-        y: [0, 400]
-      }
+        y: [0, 400],
+      },
     },
-
-
-
 
     validationRules: {
       height: {
         min: 0,
         max: 300,
-        step: 5
+        step: 5,
       },
       rotation: {
         min: -180,
         max: 180,
-        step: 15
-      }
-    }
+        step: 15,
+      },
+    },
   }),
 
   actions: {
@@ -52,21 +49,22 @@ export const useRadarStore = defineStore('radar', {
       this.settings = { ...this.settings, ...updates };
     },
 
-    setMode(mode: 'ceiling' | 'wall') {
+    setMode(mode: "ceiling" | "wall") {
       this.settings.mode = mode;
       this.resetBoundary();
     },
 
     resetBoundary() {
-      const bounds = this.settings.mode === 'ceiling' 
-        ? this.defaultBoundary.ceiling 
-        : this.defaultBoundary.wall;
+      const bounds =
+        this.settings.mode === "ceiling"
+          ? this.defaultBoundary.ceiling
+          : this.defaultBoundary.wall;
 
       this.settings.boundary = {
         v1: { x: bounds.x[0], y: bounds.y[0] },
         v2: { x: bounds.x[1], y: bounds.y[0] },
         v3: { x: bounds.x[0], y: bounds.y[1] },
-        v4: { x: bounds.x[1], y: bounds.y[1] }
+        v4: { x: bounds.x[1], y: bounds.y[1] },
       };
     },
 
@@ -90,7 +88,6 @@ export const useRadarStore = defineStore('radar', {
 
     toggleSignal() {
       this.settings.showSignal = !this.settings.showSignal;
-    }
-  }
+    },
+  },
 });
-

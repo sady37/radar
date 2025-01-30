@@ -1,28 +1,27 @@
 // stores/radarData.ts
-import { defineStore } from 'pinia';
-import type { PersonData, VitalSignData } from './types';
-import { MockRadarService } from '../utils/mockRadarData';
+import { defineStore } from "pinia";
+import type { PersonData, VitalSignData } from "./types";
+import { MockRadarService } from "../utils/mockRadarData";
 
-export const useRadarDataStore = defineStore('radarData', {
+export const useRadarDataStore = defineStore("radarData", {
   state: () => ({
     //currentPerson: null as PersonData | null,
-    currentPersons: [] as PersonData[],  // 改为数组存储多人数据
+    currentPersons: [] as PersonData[], // 改为数组存储多人数据
     currentVital: null as VitalSignData | null,
-    mockService: new MockRadarService()
+    mockService: new MockRadarService(),
   }),
 
   actions: {
     startDataStream() {
       this.mockService.startMockDataStream(
-		  (personsData) => {
+        (personsData) => {
           this.currentPersons = personsData;
-		  },
-		  (vitalData) => {
+        },
+        (vitalData) => {
           this.currentVital = vitalData;
-		  }
+        },
       );
-	  },
-  
+    },
 
     stopDataStream() {
       this.mockService.stopMockDataStream();
@@ -30,10 +29,10 @@ export const useRadarDataStore = defineStore('radarData', {
 
     updatePersonsData(data: PersonData[]) {
       this.currentPersons = data;
-	  },
-  
-	  updateVitalSign(data: VitalSignData) {
+    },
+
+    updateVitalSign(data: VitalSignData) {
       this.currentVital = data;
-	  }
-  }
+    },
+  },
 });
