@@ -1,0 +1,434 @@
+
+本项目是基于 Vue 3 构建的 2D 画布系统，用于对象布局、交互控制、雷达信号可视化。该系统支持固定物体、移动物体、雷达对象的拖拽、旋转、属性编辑、信号区域显示，
+并包含完整的工具栏、编辑菜单、坐标系统及坐标转换。
+
+技术架构
+技术说明
+Vue 3 + TypeScript
+组件化架构，确保可维护性
+Vue Router
+处理不同视图的切换
+Vuex
+状态管理，存储对象信息
+SCSS (dart-sass)
+预处理样式，提升 UI 设计灵活性
+
+✅ 采用 Prettier 代码格式化，符合 Lint 规则
+✅ 工具栏、编辑菜单均符合 Vue 组件结构化开发
+
+===============
+
+###v1.0
+完成画布和Toolbar的框架
+Canvas 600*500px 坐标，刻度，放大key 
+spacer 5*500px 
+toolbar 150*500px  图样，对像编辑区，控制区  
+
+###v1.1
+	因toolbar高度不足，修改空间，宽+40，高度+20
+	Canvas 620*520px 坐标，刻度，放大key ,逻辑单元 620*520
+	spacer 10*520px 
+	toolbar 170*520px  图样，对像编辑区，控制区  
+
+
+###V1.2
+只把Toolbar中
+改为Ceiling Rec.Hight 改为Ceiling H200-300cm
+wall Rec.Hight 改为Wall H150-180cm
+1.测试验证store数据功能
+	RadarToolbar中连接store并实现模式切换的逻辑
+2.	数据可以存储到Store
+	数据结构正确
+	Store的actions可以执行
+	如果需验证用户输入值是否正确传到Store，建议修改TestStore增加输入框：
+1/2 已完成此部验证
+
+
+
+###V1.3
+	处理Toolbar的输入和Store的绑定
+	清Ll许多地方默认的单位由cm改为dm分米，本Vue单位全部采用逻辑单位 1逻辑单位=1cm, for example ,radar hight 150-330
+	Ceiling Rec. height 改为 Ceiling default H280cm
+	Wall Rec. height  改为  Wall default H150cm
+	雷达高度限制 150~330，精度10，Ceiling default Hight 280,Wall default Hight 150
+	door默认L90*W30
+	bed默认L190*W90
+	Exclude默认L100*W50
+	Other默认L50*W50
+    v1.3.0
+	--解决显示，默认值，去除输入框后方的方向键头
+    v1.3.1
+	--解决雷达 Ceiling/Wall 模认值显示
+	--解决雷达 Ceiling/Wall Hight 输入校验，输入值[150-330],精度10。
+	  低于150，自动=150，高于330，自动=330，自动取整。
+
+	3.接下来将RadarToolbar连接到Store。需要：
+ 	--修改对象创建逻辑  完成
+	--连接雷达属性到Store   
+	--属性值双向绑定         
+
+根据你的描述,建议继续以下验证:
+
+确认从TestStore修改Store中的雷达属性时,RadarToolbar中的对应属性也能正确更新。这可以验证双向绑定的另一方向。
+检查Store中的雷达高度等属性的值是否符合检验逻辑。输入无效值后,Store中的对应属性不应被更新。
+修复TestStore组件,确保它修改Store数据后,自身UI也能正确更新,同时不影响其他组件如RadarToolbar的显示和功能。
+考虑添加更多测试用例,覆盖各种正常和异常情况,以全面验证Store的同步逻辑。
+
+   v1.3.2
+    * 测试其他雷达属性(rotation, boundary等)与Store的连接
+	* 完成剩余属性的双向绑定
+	* 处理属性变更事件
+   canvas.vue toolbar.vue  完成雷达高度，rotation 验证
+   v1.3.3
+	删除store测试代码并修复L/W的输入故障
+
+###V1.4
+	1.点击moudule sample 来选择module，设置object properties, 点击set在canvas中心创建对像，并保持创
+	建的对象为选择的对象，方便改变属情，如radar show boundary on/off
+	2.解决输入的值不可见，使属性框中的值=经校验更正过的输入值
+
+###V1.5
+	1.Implement click object detection in Canvas
+	2.Update Toolbar UI when object selected
+	3.Enable property editing for selected object
+
+   boundary only的Other/ radar，不受碰撞规则约束
+   radar 可与其它固定或移动物体重叠，且处于显示的最上层
+
+   确认修改并总结当前工作流程：
+
+新建对象时调用 push 添加到数组
+创建后取消选中状态
+用户需手动点击选中对象
+选中后可移动、旋转或编辑属性
+
+这样既保持了数据一致性，也提供了更清晰的用户操作流程。
+object.ts仍保持不变。
+
+重大改变
+解决方案3：在现在基础上，分离create/edit功能，在set,delete 变成3个按钮：create/set/del
+选中模板，弹出对象属情，编辑属性，点击create，选中对象清空，创建新对像，新对象select为unlock状态，后续可直接移动编辑.
+左健空白处取消选中，点击选中，选中后，edit变绿色，delete变红色，表示可编辑可删除。
+
+####v1.6
+ -1.6.1
+  move and roll, name  object  
+ -1.6.2
+  显示坐标，没有选中对象时，使用mouse的坐标，选中对像时，显示对像坐标。
+  有偏差
+  雷达坐标为其圆心，其它固体对像是矩形，（右上，左上，右下，左上），在坐标区显示矩形右上坐标。
+  -1.6.3
+  增加mouse move object
+
+###v1.7
+  -v1.7.1
+   更新画布及雷达坐标，顶部中心为原点，X 左+右负，上-下+
+  -v1.7.2
+   原来对像区的lock及对象属性显示取消。在工具栏方向键整体划分为为两例，左例50，方向例整体右移，左列新增两个3的显示控制：从上向下，Lock,显示刻度，显示网格; 右列为方向健
+  -V1.7.3
+  取消property-area的lock-toggle，type-label
+  实现lock,show scale, show gird
+
+###v1.8
+--v1.8.1 
+		template-area的所有固定物体(矩形)对像有以下属性并保存,以供后期使用雷达作标传给真实雷达使用：
+		Type-value	type-name	sharp						color						矩形4个点坐标		 		
+				
+		1			Other		Rectangle(L50W50)			Gray #d3d3d3			 v1(-,-),v2(+,-),v3(-,+),v4(+,+)				
+		2			bed			Rectangle(L190*W90)			gray-blue #0cade3		 (-,-)(+,-)(-,+)(+,+)					
+		3			exclude		Rectangle(L50W50)			light-Gray #d3d3d3		 (-,-)(+,-)(-,+)(+,+)					
+		4			door		Rectangle(L90W30)			Gray-green #a0eda0		 (-,-)(+,-)(-,+)(+,+)					
+		5			monitorBed	Rectangle(L190W90)			Gray-orage #D2B280		 (-,-)(+,-)(-,+)(+,+)					
+
+        2
+		将M改成：   Person
+		10			M		Ellipse(a40b10),上顶点红	Gray-orage#ADABA1    	       圆心
+
+		template-area  property-area
+
+		Radar自身坐标与画布相同，X 左+右负，Y上-下+，原点在圆心，Y轴向下。 
+		radar新增boundary设置，  左边界：+x(画布左侧),右边界-x(画布左侧), 上边界：-y(画布上侧),下边距+y(画布下侧)
+		Ceiling: 以radar原心为矩形中心， 
+		wall:以radar原心为矩形上边框的中心,，上边界-y恒等0
+		雷达默认状态（初始状态）：
+		Copy- 原点：雷达圆心
+		- X轴：左负(-)右正(+)，与画布X轴相同
+		- Y轴：上负(-)下正(+)，与画布Y轴相同
+		- 方向指示：白色小长方形(4:1)指向Y轴正方向(下)
+		旋转规则：
+		旋转时整个坐标系跟随旋转
+		旋转角度顺时针为正，与画布相同
+		这样雷达的坐标系就是画布坐标系的平移，更容易理解和计算。
+		#0f85df  15, 133, 223          ctx.strokeStyle = 'rgba(10, 91, 135, 0.9)'
+
+		// 方向指示器：钝120三角形，顶点用白色
+
+		1. 原代码考虑了缩放，bounds.x[0] * scale.value,
+		2. 仍为固定边界，未考虑在toolbar show boudary行上增加2行输入框：
+		   第1行left:[10-300]      right:[10-300]  
+		   第2行front:{ceiling[10,200] ,wall[30-400]}   rear:{ceiling[10,200],wall[0]}
+		 输入精度10
+
+		 ###v1.9
+			解决坐标冲空，边界画的卡顿，更新雷达方向指示器
+			 房间坐标系（全局视角）：
+
+			站在房间外看屏幕：
+			- 左侧是X负方向（-）
+			- 右侧是X正方向（+）
+			- 上方是Y正方向（+）
+			- 下方是Y负方向（-）
+			这符合我们直观看屏幕的习惯
+
+			雷达坐标系（局部视角）：
+
+			Wall模式：
+			- 雷达圆面正对观察者
+			- LED指示灯在上方，表示Y+朝天
+			- 圆心为原点
+			- 左右方向（X轴）与房间一致：左负右正
+			- 上下方向（Y轴）：上正下负
+
+			Ceiling模式：
+			- 雷达圆面朝下
+			- 坐标系与房间Y不致：
+			  * X轴：左负(-)右正(+) 与房间X相同
+			  * Y轴：上负(-)下正(+) 与房间Y相反
+			- LED默认指向屏幕下方（观察者看房间的前方）
+			- 在2D表现时，LED（绿色小长方形）指向下方
+
+			Wall时坐标系都与房间一致，ceiling Y相反
+			区别只在于安装位置和LED方向
+			有利于统一边界的设置和显示
+
+	
+
+########v1.9####
+    代码拆分，重做画布坐标，雷达坐标区分wall/ceiling 两种
+	这是一个很好的重构建议。我建议以下改进方案：
+    -----代码拆分
+		把雷达图样抽离成单独文件，建议创建:
+
+		Copycomponents/radar/
+		  ├── RadarIcon.vue    # 工具栏的雷达图标
+		  └── RadarSymbol.vue  # 画布中的雷达符号
+
+		在RadarSymbol.vue中：
+
+		定义两种模式的雷达外观
+		接收mode属性决定显示样式
+		统一管理雷达相关的SVG绘制代码
+		方便未来扩展和维护
+
+
+		建议将画布和坐标系统的代码也拆分：
+
+		Copycomponents/canvas/
+		  ├── CoordinateSystem.ts   # 坐标系统相关逻辑
+		  ├── GridSystem.ts         # 网格系统相关逻辑
+		  └── CanvasUtils.ts        # 画布工具函数
+		
+		边界绘制和雷达图样应该分开处理，因为：
+
+		边界属于雷达的逻辑属性，定义了监测范围
+		边界数据需要在多个组件中使用，不仅是显示用
+		边界验证和计算逻辑与图样显示无关
+
+
+		建议的结构：
+
+		Copysrc/
+		├── components/radar/
+		│   ├── RadarIcon.vue      # 工具栏图标
+		│   ├── RadarSymbol.vue    # 雷达图样(C/W两种模式)
+		│   └── RadarBoundary.vue  # 边界绘制组件
+		├── stores/
+		│   └── types.ts           # 保留边界相关的类型定义
+		└── utils/
+		    └── boundaryUtils.ts   # 边界计算和验证逻辑
+
+		types.ts继续保留边界相关的接口定义：
+
+		typescriptCopyexport interface RadarBoundary {
+		  v1: Point;
+		  v2: Point;
+		  v3: Point;
+		  v4: Point;
+		}
+
+		export interface BoundarySettings {
+		  ceiling: {...};
+		  wall: {...};
+		}
+		这样可以：
+
+		保持类型定义的集中管理
+		便于其他组件引用边界相关的类型
+		方便未来扩展边界相关的功能
+
+	----雷达坐标及图样
+			 房间坐标系（全局视角）：
+
+			站在房间外看屏幕：
+			- 左侧是X负方向（-）
+			- 右侧是X正方向（+）
+			- 上方是Y正方向（+）
+			- 下方是Y负方向（-）
+			这符合我们直观看屏幕的习惯
+
+			雷达坐标系（局部视角）：
+
+			Wall模式：
+			- 雷达圆面正对观察者
+			- LED指示灯在上方，表示Y+朝天
+			- 圆心为原点
+			- 左右方向（X轴）与房间一致：左负右正
+			- 上下方向（Y轴）：上正下负
+
+			Ceiling模式：
+			- 雷达圆面朝下
+			- 坐标系与房间Y不致：
+			  * X轴：左负(-)右正(+) 与房间X相同
+			  * Y轴：上负(-)下正(+) 与房间Y相反
+			- LED默认指向屏幕下方（观察者看房间的前方）
+			- 在2D表现时，LED（绿色小长方形）指向下方
+		
+
+					我已经更新了雷达图，主要改进包括：
+
+
+			LED指示器：
+			Wall模式：LED在上方（Y+）
+			Ceiling模式：LED在下方,（指向观察者前方）
+			使用绿色小矩形表示，便于识别
+
+
+			视觉优化：
+			字体显示：
+			
+			C/W字体大小到32pt
+			加粗处理增加可读性
+			与指示器保持更大间距
+			C/W标识清晰可见
+
+
+			保持浅色配色方案：
+			外圈：浅蓝 #bee3f8
+			中圈：中蓝 #63b3ed
+			内圈：深蓝 #3182ce
+
+
+			布局优化：
+			增加了整体SVG的高度以容纳更大的字体
+			保持雷达图本身在25px范围内
+			指示器保持与中圈同宽
+			ctx.rect(-15 * scale,  // 左边起点，当前是15，与外圆半径相同
+         	(indicatorY - 3) * scale,  // 垂直位置
+         	30 * scale,   // 宽度，当前是30（-15到+15）
+         	6 * scale)    // 高度
+
+####V2.0
+	重构代码
+	定义模板数据接口，方便未来与真实雷达通讯
+
+		Type-value	type-name	sharp						color						矩形坐标(V1左上角，V2右上角，v3右下角，v4左下角)	其它状态	 		
+				
+		1			Other		Rectangle(L50W50)			Gray #d3d3d3			 v1(-,-),v2(+,-),v3(-,+),v4(+,+)				    
+		2			bed			Rectangle(L190*W90)			gray-blue #0cade3		 v1(-,-),v2(+,-),v3(-,+),v4(+,+)					2/5可互转					
+		3			exclude		Rectangle(L50W50)			light-Gray #d3d3d3		 v1(-,-),v2(+,-),v3(-,+),v4(+,+)					
+		4			door		Rectangle(L90W30)			Gray-green #a0eda0		 v1(-,-),v2(+,-),v3(-,+),v4(+,+)					
+		5			monitorBed	Rectangle(L190W90)			Gray-orage #D2B280		 v1(-,-),v2(+,-),v3(-,+),v4(+,+)				
+	
+		10			person		Ellipse(a40b10),上顶点红	Gray-orage#ADABA1    	   圆心/时间(用于轨迹)								身体姿态，生理指标
+
+		人体姿态：
+		0: 初始化 1: 行走 2: 疑似跌倒 3: 蹲坐 4: 站立 5：跌倒确认 6: 躺卧
+
+		呼吸心率
+	###v2.1
+	首先用云云对接，定义接口，框架，无报错
+	未修改canvas,toolbar
+	
+	好的。现在我们已经完成：
+
+数据结构定义：
+
+
+PersonData, VitalSignData 接口
+PersonEvent, SleepState 枚举
+
+
+数据模拟服务：
+
+
+MockRadarService 实现
+模拟数据生成逻辑
+定时更新机制
+
+
+状态管理：
+
+
+RadarDataStore 存储当前数据状态
+
+后续工作建议：
+
+在 RadarCanvas 中实现实时人员绘制
+添加不同姿态的图标显示
+实现告警状态的视觉反馈
+
+
+
+#2.2 原来的版本，坐标定义OK，但代码错
+	在2.1基础上:画布坐标更新,将刻度固定在四边,随Scale缩放自动变动坐标显示的移动、网络线,
+  		实现对象、mouse统一转换为画布坐标,解决mouse选取对象错
+	2.2新增重制雷达自身坐标H/V,并更新图样的坐标显示
+
+			计算机默认坐标系:
+			原点(0,0)在画布左上角
+			X轴向右为正
+			Y轴向下为正
+
+			画布原点移至顶部中心，
+			X轴：向右为正（保持不变）
+			Y轴：向下为正（保持计算机默认方向）
+
+			雷达坐标系（局部视角）：不使用X/Y/Z, 采用水平H/V垂直
+
+			在雷达信号的描述中，HFOV（水平视场）和VFOV（垂直视场）通常是指雷达波束在水平和垂直方向上的覆盖范围。定义H/F坐标时，通常会根据雷达的坐标系来确定视角。
+			对于H坐标，常见的做法是将雷达的发送面（或者雷达波束的前进方向）对准观察者的位置。在这种情况下，雷达的H坐标通常定义为：
+			H+：通常对应于雷达波束在水平面上朝向“右”的方向。  
+			H-：通常对应于雷达波束在水平面上朝向“左”的方向。
+			对于VFOV，雷达的V坐标定义为：
+			V+：通常是雷达波束在垂直方向上向上指的方向。
+			V-：通常是雷达波束在垂直方向上向下指的方向。
+
+			Wall模式：
+			- 雷达的发送面（或者雷达波束的前进方向）对准观察者的位置
+			- LED指示灯在上方， V+朝天
+			- 圆心为原点
+			- H轴水平方向: 左正(-)右负(+)   投影到平面上，因面对，所以与计算机/房间观察者 X轴刚好相反
+			- V轴垂直方向：投影在平面上，只有|绝对值|，
+
+			Ceiling模式：
+			- 雷达的发送面（或者雷达波束的前进方向）对准地面
+			  * H轴：左正(-)右负(+) 与房间X相反
+			  * V轴：上负(-)下正(+) 与房间一致
+			- LED默认指向屏幕下方（观察者看房间的前方）
+			- 在2D表现时，LED（绿色小长方形）指向下方
+
+			Wall/Ceiling时坐标系：
+			 H轴都与X轴相反，
+			 V轴：
+				Wall:V只有|绝对值|，初始V=Y，如果旋转90，V=-Y
+				ceiling: v=Y
+				
+			区别只在于安装位置和LED方向
+			有利于统一边界的设置和显示
+
+
+		// 现在的代码实现了：
+		- 画布显示一个房间的俯视图
+		- 坐标原点在顶部中心
+		- 缩放时保持原点位置不变
+		- Y轴向下为正，符合直觉
