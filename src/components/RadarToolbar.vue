@@ -1,3 +1,4 @@
+# src/components/RadarToolbar.vue
 ###########////1 完整的template部分
 <template>
   <div class="radar-toolbar">
@@ -67,7 +68,7 @@
 
       <div
         class="size-row"
-        v-if="['Door', 'Bed', 'Exclude', 'Other'].includes(selectedType)"
+        v-if="['Door', 'Bed', 'Exclude', 'Other','Wall', 'TV'].includes(selectedType)"
       >
         <div class="input-group">
           <span>L:</span>
@@ -324,6 +325,8 @@ const objectTypes = [
   { type: "Bed", label: "Bed", defaultLength: 190, defaultWidth: 90 },
   { type: "Exclude", label: "Exclude", defaultLength: 50, defaultWidth: 50 },
   { type: "Other", label: "Other", defaultLength: 50, defaultWidth: 50 },
+  { type: "Wall", label: "Wall", defaultLength: 200, defaultWidth: 5 },   
+  { type: "TV", label: "TV", defaultLength: 100, defaultWidth: 20 },        
   { type: "Radar", label: "", defaultLength: 20, defaultWidth: 20 },
   { type: "M", label: "M", defaultLength: 30, defaultWidth: 30 },
 ];
@@ -662,7 +665,7 @@ const displayPosition = computed(() => {
     .template-buttons {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 6px;
+      gap: 4px;
       margin-bottom: 6px;
 
       .template-btn {
@@ -790,8 +793,8 @@ const displayPosition = computed(() => {
     background: #f9f9f9;
     padding: 12px 10px; // 增加内边距
     border-radius: 4px;
-    margin-top: 10px; // 增加与template区的间距
-    margin-bottom: 150px; // 减少底部空间
+    margin-top: 1px; // 增加与template区的间距
+    margin-bottom: 140px; // 减少底部空间150
 
     // 增加各部分间距
     > div {

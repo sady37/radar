@@ -1,3 +1,5 @@
+# src/components/radar/RadarSymbol.vue
+
 <template>
 	<g :transform="`translate(${transformPosition.h}, ${transformPosition.v}) rotate(${rotation})`">
 	  <!-- 雷达主体 -->

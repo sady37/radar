@@ -10,6 +10,7 @@ export interface Size {
 }
 
 export interface ObjectProperties {
+  typeValue?: number;    // 新增：雷达定义的类型值 1-Other,2-bed,3-exclude,4-door,5-monitorBed
   height?: number;
   mode?: "ceiling" | "wall";
   isMonitored?: boolean;

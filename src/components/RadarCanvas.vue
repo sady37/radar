@@ -1,3 +1,4 @@
+# src/components/RadarCanvas.vue
 <template>
 	<div class="radar-canvas">
 	  <div class="zoom-controls">
@@ -694,6 +695,26 @@ import type { RadarObject, ObjectProperties, BoundarySettings, Point } from '../
         ctx.strokeStyle = "#666";
         ctx.stroke();
         break;
+
+		case "Wall":
+		  ctx.beginPath();
+		  ctx.rect(-halfLength, -halfWidth, obj.size.length * scale.value, obj.size.width * scale.value);
+		  ctx.fillStyle = "#4a4a4a";  // 灰黑色
+		  ctx.fill();
+		  ctx.strokeStyle = "#666";
+		  ctx.stroke();
+		  break;
+
+		case "TV":
+		  // 与 Exclude 使用相同的绘制逻辑
+		  ctx.beginPath();
+		  ctx.rect(-halfLength, -halfWidth, obj.size.length * scale.value, obj.size.width * scale.value);
+		  ctx.fillStyle = "#f0e68c";
+		  ctx.fill();
+		  ctx.strokeStyle = "#666";
+		  ctx.stroke();
+		  break;		
+
 
       case "Radar":
         // 调用独立的绘制函数

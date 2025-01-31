@@ -1,20 +1,47 @@
 
-本项目是基于 Vue 3 构建的 2D 画布系统，用于对象布局、交互控制、雷达信号可视化。该系统支持固定物体、移动物体、雷达对象的拖拽、旋转、属性编辑、信号区域显示，
-并包含完整的工具栏、编辑菜单、坐标系统及坐标转换。
+本radar项目是基于 Vue 3 构建的 2D 画布系统，用于对象布局、交互控制、雷达信号可视化。该系统支持固定物体、移动物体、雷达对象的拖拽、旋转、属性编辑、信号区域显示，
+并包含完整的工具栏、编辑菜单、坐标系统及坐标转换。将固定物体的坐标转换为雷达自身坐标回传给真实雷达，接收真实雷达的人体数据并展示。
 
-技术架构
-技术说明
-Vue 3 + TypeScript
-组件化架构，确保可维护性
-Vue Router
-处理不同视图的切换
-Vuex
-状态管理，存储对象信息
-SCSS (dart-sass)
-预处理样式，提升 UI 设计灵活性
+技术架构   技术说明
+Vue 3 + TypeScript  组件化架构，确保可维护性
+Vue Router          处理不同视图的切换
+Vuex                状态管理，存储对象信息
+SCSS (dart-sass)    预处理样式，提升 UI 设计灵活性
 
 ✅ 采用 Prettier 代码格式化，符合 Lint 规则
 ✅ 工具栏、编辑菜单均符合 Vue 组件结构化开发
+
+src/
+├── components/
+│   ├── common/              # 保留但目前为空
+│   ├── monitoring/          # 监控相关组件
+│   │   ├── PostureIndicator.vue  #人体姿态：
+│   │   ├── TrajectoryLine.vue  #移动物体轨迹线，本项目暂不实现
+│   │   └── VitalsDisplay.vue  #人的生理指标显示
+│   ├── radar/                 # 雷达相关组件
+│   │   ├── PersonSymbol.vue  #人的SVG，根据状态显示不同icon
+│   │   ├── RadarBoundary.vue # 边界显示
+│   │   ├── RadarIcon.vue    #雷达的Icon,用于放在工具栏，暂无
+│   │   └── RadarSymbol.vue  #雷达图形，实际上是在drawRadar.ts中绘制，未使用
+│   ├── RadarCanvas.vue     # 主画布组件
+│   └── RadarToolbar.vue    # 工具栏组件
+├── stores/                 # 状态管理
+│   ├── canvas.ts           #画布设置，width,Hight
+│   ├── mouse.ts            #mouse相关
+│   ├── objects.ts          #最初的各对像数据
+│   ├── radar.ts            #分离前的雷达数据结构
+│   ├── radarData.ts        # 存放真实雷达传送过的多人的数据:坐标、姿态、生理指标等
+│   └── types.ts            #对象属性定义
+└── utils/                 # 工具函数
+    ├── boundaryUtils.ts   #计算雷达的边界
+    ├── drawRadar.ts       #绘制雷达
+	├── mockRadarData.ts   #模拟人体数据生成            
+	├── postureIcons.ts    #人体姿态icon
+    └── trajectoryUtils.ts  #绘制运动物体轨迹
+
+
+当前已完成画布、toolbar等组件，画布坐标、对象创建、移动、旋转、改变大小，雷达模型绘制；人体模板、人体模拟数据框架已完成，但未应用。
+现需要画布固定对象上显示name label
 
 ===============
 
@@ -142,7 +169,7 @@ object.ts仍保持不变。
 
         2
 		将M改成：   Person
-		10			M		Ellipse(a40b10),上顶点红	Gray-orage#ADABA1    	       圆心
+		10			M		Ellipse(a40b10),上顶点红	   Gray-orage#ADABA1    	   圆心
 
 		template-area  property-area
 
@@ -329,21 +356,22 @@ object.ts仍保持不变。
 
 ####V2.0
 	重构代码
-	定义模板数据接口，方便未来与真实雷达通讯
+	定义模板数据接口，方便未来与真实雷达通讯, 一些固定物体使用矩形，移动物体，表示人或更多，非矩形，如椭圆或自定义的
 
-		Type-value	type-name	sharp						color						矩形坐标(V1左上角，V2右上角，v3右下角，v4左下角)	其它状态	 		
+		Type-value	type-name	sharp						color					  矩形坐标(V1左上角，V2右上角，v3右下角，v4左下角)	  其它状态	 		
 				
 		1			Other		Rectangle(L50W50)			Gray #d3d3d3			 v1(-,-),v2(+,-),v3(-,+),v4(+,+)				    
 		2			bed			Rectangle(L190*W90)			gray-blue #0cade3		 v1(-,-),v2(+,-),v3(-,+),v4(+,+)					2/5可互转					
 		3			exclude		Rectangle(L50W50)			light-Gray #d3d3d3		 v1(-,-),v2(+,-),v3(-,+),v4(+,+)					
 		4			door		Rectangle(L90W30)			Gray-green #a0eda0		 v1(-,-),v2(+,-),v3(-,+),v4(+,+)					
-		5			monitorBed	Rectangle(L190W90)			Gray-orage #D2B280		 v1(-,-),v2(+,-),v3(-,+),v4(+,+)				
+		5			monitorBed	Rectangle(L190W90)			Gray-orage #D2B280		 v1(-,-),v2(+,-),v3(-,+),v4(+,+)
+		1			Wall		Rectangle(L200W5)			Gray #d3d3d3			 v1(-,-),v2(+,-),v3(-,+),v4(+,+)	
+		3			TV   		Rectangle(L50W50)			light-Gray #d3d3d3		 v1(-,-),v2(+,-),v3(-,+),v4(+,+)	
 	
 		10			person		Ellipse(a40b10),上顶点红	Gray-orage#ADABA1    	   圆心/时间(用于轨迹)								身体姿态，生理指标
-
+						
 		人体姿态：
 		0: 初始化 1: 行走 2: 疑似跌倒 3: 蹲坐 4: 站立 5：跌倒确认 6: 躺卧
-
 		呼吸心率
 	###v2.1
 	首先用云云对接，定义接口，框架，无报错
