@@ -20,21 +20,18 @@ src/
 │   │   └── VitalsDisplay.vue  #人的生理指标显示
 │   ├── radar/                 # 雷达相关组件
 │   │   ├── PersonSymbol.vue  #人的SVG，根据状态显示不同icon
-│   │   ├── RadarBoundary.vue # 边界显示
-│   │   ├── RadarIcon.vue    #雷达的Icon,用于放在工具栏，暂无
-│   │   └── RadarSymbol.vue  #雷达图形，实际上是在drawRadar.ts中绘制，未使用
 │   ├── RadarCanvas.vue     # 主画布组件
 │   └── RadarToolbar.vue    # 工具栏组件
 ├── stores/                 # 状态管理
 │   ├── canvas.ts           #画布设置，width,Hight
 │   ├── mouse.ts            #mouse相关
 │   ├── objects.ts          #最初的各对像数据
-│   ├── radar.ts            #分离前的雷达数据结构
 │   ├── radarData.ts        # 存放真实雷达传送过的多人的数据:坐标、姿态、生理指标等
 │   └── types.ts            #对象属性定义
 └── utils/                 # 工具函数
-    ├── boundaryUtils.ts   #计算雷达的边界
     ├── drawRadar.ts       #绘制雷达
+    ├── drawRadar.ts       #计算雷达的边界，回传边界内的固定物体4点坐标，不传Wall	
+	├── drawRadar.ts       #备选的人体默认绘制：椭圆形
 	├── mockRadarData.ts   #模拟人体数据生成            
 	├── postureIcons.ts    #人体姿态icon
     └── trajectoryUtils.ts  #绘制运动物体轨迹
@@ -232,68 +229,8 @@ object.ts仍保持不变。
 
 ########v1.9####
     代码拆分，重做画布坐标，雷达坐标区分wall/ceiling 两种
-	这是一个很好的重构建议。我建议以下改进方案：
-    -----代码拆分
-		把雷达图样抽离成单独文件，建议创建:
-
-		Copycomponents/radar/
-		  ├── RadarIcon.vue    # 工具栏的雷达图标
-		  └── RadarSymbol.vue  # 画布中的雷达符号
-
-		在RadarSymbol.vue中：
-
-		定义两种模式的雷达外观
-		接收mode属性决定显示样式
-		统一管理雷达相关的SVG绘制代码
-		方便未来扩展和维护
-
-
-		建议将画布和坐标系统的代码也拆分：
-
-		Copycomponents/canvas/
-		  ├── CoordinateSystem.ts   # 坐标系统相关逻辑
-		  ├── GridSystem.ts         # 网格系统相关逻辑
-		  └── CanvasUtils.ts        # 画布工具函数
-		
-		边界绘制和雷达图样应该分开处理，因为：
-
-		边界属于雷达的逻辑属性，定义了监测范围
-		边界数据需要在多个组件中使用，不仅是显示用
-		边界验证和计算逻辑与图样显示无关
-
-
-		建议的结构：
-
-		Copysrc/
-		├── components/radar/
-		│   ├── RadarIcon.vue      # 工具栏图标
-		│   ├── RadarSymbol.vue    # 雷达图样(C/W两种模式)
-		│   └── RadarBoundary.vue  # 边界绘制组件
-		├── stores/
-		│   └── types.ts           # 保留边界相关的类型定义
-		└── utils/
-		    └── boundaryUtils.ts   # 边界计算和验证逻辑
-
-		types.ts继续保留边界相关的接口定义：
-
-		typescriptCopyexport interface RadarBoundary {
-		  v1: Point;
-		  v2: Point;
-		  v3: Point;
-		  v4: Point;
-		}
-
-		export interface BoundarySettings {
-		  ceiling: {...};
-		  wall: {...};
-		}
-		这样可以：
-
-		保持类型定义的集中管理
-		便于其他组件引用边界相关的类型
-		方便未来扩展边界相关的功能
-
-	----雷达坐标及图样
+    后期v3.0时发现太复杂，已删除
+	----画布及雷达坐标及图样
 			 房间坐标系（全局视角）：
 
 			站在房间外看屏幕：
@@ -315,8 +252,8 @@ object.ts仍保持不变。
 			Ceiling模式：
 			- 雷达圆面朝下
 			- 坐标系与房间Y不致：
-			  * X轴：左负(-)右正(+) 与房间X相同
-			  * Y轴：上负(-)下正(+) 与房间Y相反
+			  * H轴：左负(-)右正(+) 与房间X相同
+			  * V轴：上负(-)下正(+) 与房间Y相反
 			- LED默认指向屏幕下方（观察者看房间的前方）
 			- 在2D表现时，LED（绿色小长方形）指向下方
 		
@@ -379,31 +316,21 @@ object.ts仍保持不变。
 	
 	好的。现在我们已经完成：
 
-数据结构定义：
+	数据结构定义：
+		PersonData, VitalSignData 接口
+		PersonEvent, SleepState 枚举
+	数据模拟服务：
+		MockRadarService 实现
+		模拟数据生成逻辑
+		定时更新机制
 
+	状态管理：
+	RadarDataStore 存储当前数据状态
+		后续工作建议：
 
-PersonData, VitalSignData 接口
-PersonEvent, SleepState 枚举
-
-
-数据模拟服务：
-
-
-MockRadarService 实现
-模拟数据生成逻辑
-定时更新机制
-
-
-状态管理：
-
-
-RadarDataStore 存储当前数据状态
-
-后续工作建议：
-
-在 RadarCanvas 中实现实时人员绘制
-添加不同姿态的图标显示
-实现告警状态的视觉反馈
+	在 RadarCanvas 中实现实时人员绘制
+	添加不同姿态的图标显示
+	实现告警状态的视觉反馈
 
 
 
@@ -431,28 +358,22 @@ RadarDataStore 存储当前数据状态
 			V+：通常是雷达波束在垂直方向上向上指的方向。
 			V-：通常是雷达波束在垂直方向上向下指的方向。
 
-			Wall模式：
-			- 雷达的发送面（或者雷达波束的前进方向）对准观察者的位置
-			- LED指示灯在上方， V+朝天
-			- 圆心为原点
-			- H轴水平方向: 左正(-)右负(+)   投影到平面上，因面对，所以与计算机/房间观察者 X轴刚好相反
-			- V轴垂直方向：投影在平面上，只有|绝对值|，
+			ceiling 模式：
+			H轴：向左为正(+)，向右为负(-)
+			V轴：向下为正(+)，向上为负(-)
+			LED指示器在下方
 
-			Ceiling模式：
-			- 雷达的发送面（或者雷达波束的前进方向）对准地面
-			  * H轴：左正(-)右负(+) 与房间X相反
-			  * V轴：上负(-)下正(+) 与房间一致
-			- LED默认指向屏幕下方（观察者看房间的前方）
-			- 在2D表现时，LED（绿色小长方形）指向下方
+
+			wall 模式：
+			H轴：向左为正(+)，向右为负(-)
+			V轴：向下为正(+)，向上为负(-)
+			LED指示器在上方
 
 			Wall/Ceiling时坐标系：
-			 H轴都与X轴相反，
-			 V轴：
-				Wall:V只有|绝对值|，初始V=Y，如果旋转90，V=-Y
-				ceiling: v=Y
+			 H轴都与X轴相反，H=-X
+			 V轴：ceiling: v=Y, Wall:V=Y
 				
-			区别只在于安装位置和LED方向
-			有利于统一边界的设置和显示
+			区别只在于安装位置和LED方向，有利于统一边界的设置和显示
 
 
 		// 现在的代码实现了：
@@ -460,3 +381,25 @@ RadarDataStore 存储当前数据状态
 		- 坐标原点在顶部中心
 		- 缩放时保持原点位置不变
 		- Y轴向下为正，符合直觉
+
+###3.0
+	重构数据结构，固定物体及雷达 统一用 type.ts ObjectProperties{}
+	原因：对象
+	person: 仍然在type.ts 中单独定义，因为其涉及实时数据
+	删除radar.ts, 绘制对像的逻辑仍然直接放到RadarCanvas.vue drawObject(),因为对像少。
+	
+	考虑到：
+
+	人体绘制需要同时涉及 姿态图标(postureIcons.ts) 和 默认椭圆(drawPerson.ts)
+	轨迹绘制(trajectoryUtils.ts) 也需要与人体位置关联
+	RadarCanvas.vue 需要统一管理所有绘制
+
+	建议在 RadarCanvas.vue 中保留 drawPersons 作为统一入口：
+	carvar.vue 使用drawPerson（），作为人体绘制的统一入口  ，drawPerson再调trajectoryUtils和drawPosture
+	utils/
+	├── drawRadar.ts       # 绘制雷达
+	├── postureIcons.ts    # 人体姿态SVG图标定义集合，纯数据/常量文件
+	├── drawPosture.ts     # 人体绘制主函数(包含姿态图标和默认椭圆)
+	├── mockRadarData.ts   # 模拟人体数据生成         
+	└── trajectoryUtils.ts # 绘制运动物体轨迹
+

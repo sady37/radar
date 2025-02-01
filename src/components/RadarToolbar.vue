@@ -7,22 +7,22 @@
       <div class="template-buttons">
         <button
           v-for="obj in objectTypes"
-          :key="obj.type"
+          :key="obj.typeName"
           :class="[
             'template-btn',
-            obj.type.toLowerCase(),
-            { active: selectedType === obj.type },
+            obj.typeName.toLowerCase(),
+            { active: selectedType === obj.typeName },
           ]"
-          @click="selectObjectType(obj.type)"
+          @click="selectObjectType(obj.typeName)"
         >
-          <template v-if="obj.type === 'Radar'">
+          <template v-if="obj.typeName === 'Radar'">
             <div class="radar-icon">
               <div class="radar-circle"></div>
               <div class="direction-point"></div>
             </div>
           </template>
-          <template v-else-if="obj.type === 'M'">
-            <div class="m-icon">M</div>
+          <template v-else-if="obj.typeName === 'Moving'">
+            <div class="m-icon">Moving</div>
           </template>
           <template v-else>
             {{ obj.label }}
@@ -107,7 +107,7 @@
             <span>H:</span>
             <input
               type="number"
-              v-model.number="properties.height"
+              v-model.number="currentModeConfig.height.default"
               @change="validateHeightInput"
             />
             <span class="accuracy">150~330cm</span>
@@ -121,7 +121,7 @@
               <span>Le:</span>
               <input
                 type="number"
-                v-model="properties.boundary.leftX"
+                v-model="currentModeConfig.boundary.leftH"
                 min="10"
                 max="300"
                 step="10"
@@ -133,7 +133,7 @@
               <span>Ri:</span>
               <input
                 type="number"
-                v-model="properties.boundary.rightX"
+                v-model="currentModeConfig.boundary.rightH"
                 min="10"
                 max="300"
                 step="10"
@@ -147,7 +147,7 @@
               <span>Fr:</span>
               <input
                 type="number"
-                v-model="properties.boundary.frontY"
+                v-model="currentModeConfig.boundary.frontV"
                 :min="properties.mode === 'wall' ? 30 : 10"
                 :max="properties.mode === 'wall' ? 400 : 200"
                 step="10"
@@ -159,7 +159,7 @@
               <span>Re:</span>
               <input
                 type="number"
-                v-model="properties.boundary.rearY"
+                v-model="currentModeConfig.boundary.rearV"
                 :min="properties.mode === 'wall' ? 0 : 10"
                 :max="properties.mode === 'wall' ? 0 : 200"
                 step="10"
@@ -290,45 +290,33 @@
 
 ###########//2 script部分代码
 <script setup lang="ts">
+// 1. 导入
 import { ref, reactive, watch, computed } from "vue";
-
-import { useRadarStore } from "../stores/radar";
 import { useObjectsStore } from "../stores/objects";
-const objectsStore = useObjectsStore();
-const radarStore = useRadarStore();
-
 import { useMouseStore } from "../stores/mouse";
-const mouseStore = useMouseStore();
-
 import { useCanvasStore } from "../stores/canvas";
+import type { ObjectProperties, Point } from "../stores/types";
+
+
+// 2. store 初始化
+const objectsStore = useObjectsStore();
+const mouseStore = useMouseStore();
 const canvasStore = useCanvasStore();
 
-interface Properties {
-  length: number;
-  width: number;
-  height: number;
-  mode: "ceiling" | "wall";
-  boundary: {
-    leftX: number;
-    rightX: number;
-    frontY: number;
-    rearY: number;
-  };
-  isMonitored: boolean;
-  showBoundary: boolean;
-  showSignal: boolean;
-  borderOnly: boolean;
-}
+
+// 3. 接口定义
+
+// 4. 状态定义
 
 const objectTypes = [
-  { type: "Door", label: "Door", defaultLength: 90, defaultWidth: 30 },
-  { type: "Bed", label: "Bed", defaultLength: 190, defaultWidth: 90 },
-  { type: "Exclude", label: "Exclude", defaultLength: 50, defaultWidth: 50 },
-  { type: "Other", label: "Other", defaultLength: 50, defaultWidth: 50 },
-  { type: "Wall", label: "Wall", defaultLength: 200, defaultWidth: 5 },   
-  { type: "TV", label: "TV", defaultLength: 100, defaultWidth: 20 },        
-  { type: "Radar", label: "", defaultLength: 20, defaultWidth: 20 },
-  { type: "M", label: "M", defaultLength: 30, defaultWidth: 30 },
+  {typeValue:2,typeName: "Bed", label: "Bed", defaultLength: 190, defaultWidth: 90 },
+  {typeValue:3,typeName: "Exclude", label: "Exclude", defaultLength: 50, defaultWidth: 50 },
+  {typeValue:4,typeName: "Door", label: "Door", defaultLength: 90, defaultWidth: 30 },
+  {typeValue:1,typeName: "Other", label: "Other", defaultLength: 50, defaultWidth: 50 },
+  {typeValue:1,typeName: "Wall", label: "Wall", defaultLength: 200, defaultWidth: 5 },   
+  {typeValue:3,typeName: "TV", label: "TV", defaultLength: 100, defaultWidth: 20 },        
+  {typeValue:20,typeName: "Radar", label: "", defaultLength: 20, defaultWidth: 20 },
+  {typeValue:10, typeName: "Moving", label: "Moving", defaultLength: 43, defaultWidth: 43 },
 ];
 
 const selectedType = ref("");
@@ -340,17 +328,62 @@ const hasSelectedObject = ref(false);
 // 状态控制
 const editMode = ref<"template" | "object" | null>(null);
 
-const properties = reactive<Properties>({
-  length: 100,
-  width: 100,
-  height: 200,
-  mode: "ceiling",
-  boundary: { leftX: 300, rightX: 300, frontY: 200, rearY: 200 },
-  isMonitored: false,
-  showBoundary: false,
-  showSignal: false,
-  borderOnly: false,
+const properties = reactive<ObjectProperties>({
+ // 基础属性
+ typeValue: 0,    // 初始值会在选择模板时设置
+ typeName: "",    // 初始值会在选择模板时设置
+ id: "",
+ name: "",
+ position: { x: 0, y: 250 },
+ isLocked: false,
+
+ // 雷达特有属性
+ HFOV: 140,        // 水平视场角
+ VFOV: 120,        // 垂直视场角
+ rotation: 0,
+ mode: "ceiling" as "ceiling" | "wall",  // 类型断言
+ // 按模式分组的属性
+ ceiling: {
+   height: {
+     min: 150,
+     max: 330,
+     default: 280,
+     step: 10
+   },
+   boundary: {
+     leftH: 300,
+     rightH: 300,
+     frontV: 200,
+     rearV: 200
+   }
+ },
+ wall: {
+   height: {
+     min: 150,
+     max: 330,
+     default: 150,
+     step: 10
+   },
+   boundary: {
+     leftH: 300,
+     rightH: 300,
+     frontV: 400,
+     rearV: 0
+   }
+ },
+ showBoundary: false,
+ showSignal: false,
+
+ // 其他对象特有属性
+ length: 50,
+ width: 50,
+ isMonitored: false,
+ borderOnly: false
 });
+
+const currentModeConfig = computed(() => 
+  properties[properties.mode as "ceiling" | "wall"]
+);
 
 const validateLengthInput = () => {
   properties.length = validateLength(properties.length);
@@ -359,7 +392,10 @@ const validateWidthInput = () => {
   properties.width = validateWidth(properties.width);
 };
 const validateHeightInput = () => {
-  properties.height = validateHeight(properties.height);
+  const currentMode = properties.mode;
+  const value = currentModeConfig.value.height.default;
+  currentModeConfig.value.height.default = validateHeight(value);
+
 };
 
 const validateLength = (value: number): number => {
@@ -371,204 +407,161 @@ const validateWidth = (value: number): number => {
 };
 
 const validateHeight = (value: number): number => {
-  const validHeight = Math.min(330, Math.max(150, Math.round(value / 10) * 10));
-  radarStore.settings.height = validHeight;
-  return validHeight;
+  const currentMode = properties.mode;
+  const heightLimits = currentModeConfig.value.height;
+  return Math.min(heightLimits.max,
+    Math.max(heightLimits.min, Math.round(value / heightLimits.step) * heightLimits.step));
 };
 
 const validateBoundary = () => {
-  if (properties.mode === "wall") {
-    properties.boundary.frontY = Math.min(
-      400,
-      Math.max(30, Math.round(properties.boundary.frontY / 10) * 10),
-    );
-    properties.boundary.rearY = 0; // wall模式rear固定为0
+  const currentMode = properties.mode;
+  const boundary = currentModeConfig.value.boundary;
+  
+  boundary.leftH = Math.min(300, Math.max(10, Math.round(boundary.leftH / 10) * 10));
+  boundary.rightH = Math.min(300, Math.max(10, Math.round(boundary.rightH / 10) * 10));
+  
+  if (currentMode === "wall") {
+    boundary.frontV = Math.min(400, Math.max(30, Math.round(boundary.frontV / 10) * 10));
+    boundary.rearV = 0;  // wall模式rear固定为0
   } else {
-    // ceiling模式
-    properties.boundary.frontY = Math.min(
-      200,
-      Math.max(10, Math.round(properties.boundary.frontY / 10) * 10),
-    );
-    properties.boundary.rearY = Math.min(
-      200,
-      Math.max(10, Math.round(properties.boundary.rearY / 10) * 10),
-    );
+    boundary.frontV = Math.min(200, Math.max(10, Math.round(boundary.frontV / 10) * 10));
+    boundary.rearV = Math.min(200, Math.max(10, Math.round(boundary.rearV / 10) * 10));
   }
-
-  // left和right的验证
-  properties.boundary.leftX = Math.min(
-    300,
-    Math.max(10, Math.round(properties.boundary.leftX / 10) * 10),
-  );
-  properties.boundary.rightX = Math.min(
-    300,
-    Math.max(10, Math.round(properties.boundary.rightX / 10) * 10),
-  );
 };
 
+
 watch(
-  () => objectsStore.selectedId,
-  (newId) => {
-    if (newId) {
-      editMode.value = "object";
-      selectedType.value = "";
-      const obj = objectsStore.objects.find((o) => o.id === newId);
-      if (obj) {
-        hasSelectedObject.value = true;
-        selectedType.value = obj.type;
-        objectName.value = obj.name;
-        position.x = obj.position.x;
-        position.y = obj.position.y;
-        rotation.value = obj.rotation;
-        isLocked.value = obj.isLocked;
+ () => objectsStore.selectedId,
+ (newId) => {
+   if (newId) {
+     editMode.value = "object";
+     selectedType.value = "";
+     const obj = objectsStore.objects.find((o: ObjectProperties) => o.id === newId);
+     if (obj) {
+       hasSelectedObject.value = true;
+       selectedType.value = obj.typeName;
+       properties.name = obj.name;
+       properties.position = obj.position;
+       properties.rotation = obj.rotation;
+       properties.isLocked = obj.isLocked;
 
-        // 同步尺寸
-        properties.length = obj.size.length;
-        properties.width = obj.size.width;
+       // 同步固定物体属性
+       properties.length = obj.length;
+       properties.width = obj.width;
 
-        // 同步特殊属性
-        if (obj.properties) {
-          properties.height = obj.properties.height || 200;
-          properties.mode = obj.properties.mode || "ceiling";
-          properties.isMonitored = obj.properties.isMonitored || false;
-          properties.showBoundary = obj.properties.showBoundary || false;
-          properties.showSignal = obj.properties.showSignal || false;
-          properties.borderOnly = obj.properties.borderOnly || false;
-        }
-      }
-    } else {
-      editMode.value = null;
-    }
-  },
+       // 同步雷达特有属性
+       if (obj.mode) {  // 如果是雷达对象
+         properties.mode = obj.mode;
+         properties[obj.mode] = obj[obj.mode];
+         properties.HFOV = obj.HFOV || 140;
+         properties.VFOV = obj.VFOV || 120;
+         properties.showBoundary = obj.showBoundary || false;
+         properties.showSignal = obj.showSignal || false;
+       }
+
+       // 同步其他特有属性
+       properties.isMonitored = obj.isMonitored || false;
+       properties.borderOnly = obj.borderOnly || false;
+     }
+   } else {
+     editMode.value = null;
+   }
+ }
 );
 
-// 监听模式变化，更新高度默认值
-watch(
-  () => properties.mode,
-  (newMode) => {
-    properties.height = newMode === "ceiling" ? 280 : 150;
-    properties.boundary.frontY = newMode === "ceiling" ? 200 : 400;
-    properties.boundary.rearY = newMode === "ceiling" ? 200 : 0;
-  },
-);
 
-// 监听lock模式
-watch(
-  () => isLocked.value,
-  (newValue) => {
-    if (objectsStore.selectedId) {
-      const obj = objectsStore.objects.find(
-        (o) => o.id === objectsStore.selectedId,
-      );
-      if (obj) {
-        objectsStore.updateObject(objectsStore.selectedId, {
-          ...obj,
-          isLocked: newValue,
-        });
-      }
-    }
-  },
-);
 
-const selectObjectType = (type: string) => {
-  console.log("Selected type:", type); // 添加调试日志
+// 5. 函数定义 (确保每个函数只定义一次)
+
+const selectObjectType = (typeName: string) => {
   editMode.value = "template";
-  selectedType.value = type;
-  const objType = objectTypes.find((t) => t.type === type);
+  selectedType.value = typeName;
+  const objType = objectTypes.find((t) => t.typeName === typeName);
   if (objType) {
     properties.length = objType.defaultLength;
     properties.width = objType.defaultWidth;
 
-    if (type === "Radar") {
-      properties.height = properties.mode === "ceiling" ? 280 : 150;
+    if (typeName === "Radar") {
+      currentModeConfig.value.height.default = 
+        properties.mode === "ceiling" ? properties.ceiling.height.default : properties.wall.height.default;
     }
   }
 };
 
 const handleSetButton = () => {
-  const objectData = {
-    type: selectedType.value,
+  const objectData: Omit<ObjectProperties, "id"> = {
+    typeValue: objectTypes.find(t => t.typeName === selectedType.value)?.typeValue || 0,
+    typeName: selectedType.value,
     name: objectName.value || selectedType.value,
     position: {
-      x: objectsStore.selectedId ? position.x : 0,
-      y: objectsStore.selectedId ? position.y : 0,
+      x: objectsStore.selectedId ? properties.position.x : 0,
+      y: objectsStore.selectedId ? properties.position.y : 0,
     },
-    size: {
-      length: properties.length,
-      width: properties.width,
-    },
-    rotation: rotation.value,
-    isLocked: isLocked.value,
-    properties: {
-      mode: properties.mode,
-      height: properties.height,
-      showBoundary: properties.showBoundary,
-      showSignal: properties.showSignal,
-      isMonitored: properties.isMonitored,
-      borderOnly: properties.borderOnly,
-    },
+    length: properties.length,
+    width: properties.width,
+    rotation: properties.rotation,
+    isLocked: properties.isLocked,
+    mode: properties.mode,
+    ceiling: properties.ceiling,   // 直接使用具体的模式数据
+    wall: properties.wall,         // 直接使用具体的模式数据
+    showBoundary: properties.showBoundary,
+    showSignal: properties.showSignal,
+    isMonitored: properties.isMonitored,
+    borderOnly: properties.borderOnly,
   };
 
   if (objectsStore.selectedId) {
     objectsStore.updateObject(objectsStore.selectedId, objectData);
   } else {
     const id = objectsStore.createObject(objectData);
-    objectsStore.selectObject(null); // 创建后取消选择
-    //objectsStore.selectObject(id)
+    objectsStore.selectObject(null);
   }
-  // 重置选中的模板类型
   selectedType.value = "";
-  console.log("After update/create:", objectsStore.objects); // 添加日志
+  //console.log("After update/create:", objectsStore.objects);
 };
 
-// 在 objectData 之前，需要构建对象数据
 const createObject = () => {
-  const objectData = {
-    type: selectedType.value,
-    name: objectName.value || selectedType.value,
-    position: {
-      x: objectsStore.objects.length * 20,
-      y: canvasStore.height / 2 + objectsStore.objects.length * 20,
-    },
-    size: {
-      length: properties.length,
-      width: properties.width,
-    },
-    rotation: 0,
-    isLocked: false,
-    properties: {
-      mode: properties.mode,
-      height: properties.height,
-      showBoundary: properties.showBoundary,
-      showSignal: properties.showSignal,
-      isMonitored: properties.isMonitored,
-      borderOnly: properties.borderOnly,
-    },
+  const selectedObj = objectTypes.find((t) => t.typeName === selectedType.value);
+  const objectData: Omit<ObjectProperties, "id"> = {
+      typeValue: selectedObj?.typeValue || 0,  // 从 objectTypes 中获取对应的 typeValue
+	  typeName: selectedType.value,
+	  name: objectName.value || selectedType.value,
+	  position: {
+		  x: objectsStore.objects.length * 20,
+		  y: canvasStore.height / 2 + objectsStore.objects.length * 20,
+	  },
+	  length: properties.length,
+	  width: properties.width,
+	  rotation: 0,
+	  isLocked: false,
+	  mode: properties.mode,
+	  ceiling: properties.ceiling, // 直接使用具体的模式数据
+	  wall: properties.wall, // 直接使用具体的模式数据
+	  showBoundary: properties.showBoundary,
+	  showSignal: properties.showSignal,
+	  isMonitored: properties.isMonitored,
+	  borderOnly: properties.borderOnly,
   };
 
   const id = objectsStore.createObject(objectData);
-  selectedType.value = ""; // 清空选择的模板
+  selectedType.value = "";  // 清空选择的模板
   editMode.value = null;
 };
 
 const updateObject = () => {
   if (objectsStore.selectedId) {
-    const objectData = {
-      type: selectedType.value,
+    const  objectData: Partial<ObjectProperties> = {
+      typeName: selectedType.value,
       name: objectName.value,
-      size: {
-        length: properties.length,
-        width: properties.width,
-      },
-      properties: {
-        mode: properties.mode,
-        height: properties.height,
-        boundary: properties.boundary, // 确保包含边界属性
-        showBoundary: properties.showBoundary,
-        showSignal: properties.showSignal,
-        isMonitored: properties.isMonitored,
-        borderOnly: properties.borderOnly,
-      },
+      length: properties.length,
+      width: properties.width,
+      mode: properties.mode,
+	  ceiling: properties.ceiling,   // 直接使用具体的模式数据
+	  wall: properties.wall,         // 直接使用具体的模式数据
+      showBoundary: properties.showBoundary,
+      showSignal: properties.showSignal,
+      isMonitored: properties.isMonitored,
+      borderOnly: properties.borderOnly,
     };
     objectsStore.updateObject(objectsStore.selectedId, objectData);
   }
@@ -582,13 +575,10 @@ const deleteObject = () => {
   }
 };
 
-// 在 RadarToolbar.vue 中修改
 const move = (direction: "up" | "down" | "left" | "right") => {
   if (!objectsStore.selectedId) return;
 
-  const obj = objectsStore.objects.find(
-    (o) => o.id === objectsStore.selectedId,
-  );
+  const obj = objectsStore.objects.find((o: ObjectProperties) => o.id === objectsStore.selectedId);
   if (!obj || obj.isLocked) return;
 
   let { x, y } = obj.position;
@@ -618,9 +608,7 @@ const move = (direction: "up" | "down" | "left" | "right") => {
 const rotate = (angle: number) => {
   if (!objectsStore.selectedId) return;
 
-  const obj = objectsStore.objects.find(
-    (o) => o.id === objectsStore.selectedId,
-  );
+  const obj = objectsStore.objects.find((o: ObjectProperties) => o.id === objectsStore.selectedId);
   if (!obj || obj.isLocked) return;
 
   const newRotation = (obj.rotation + angle + 360) % 360;
@@ -632,16 +620,14 @@ const rotate = (angle: number) => {
 
 const displayPosition = computed(() => {
   if (objectsStore.selectedId) {
-    const obj = objectsStore.objects.find(
-      (o) => o.id === objectsStore.selectedId,
-    );
+    const obj = objectsStore.objects.find((o:ObjectProperties) => o.id === objectsStore.selectedId);
     if (obj) {
-      if (obj.type === "Radar") {
+      if (obj.typeName === "Radar") {
         return { x: obj.position.x, y: obj.position.y };
       } else {
-        // 计算矩形右上角坐标
-        const halfLength = obj.size.length / 2;
-        const halfWidth = obj.size.width / 2;
+		// 计算矩形右上角坐标
+        const halfLength = obj.length / 2;
+        const halfWidth = obj.width / 2;
         return {
           x: obj.position.x + halfLength,
           y: obj.position.y - halfWidth,
@@ -652,6 +638,7 @@ const displayPosition = computed(() => {
   return mouseStore.position;
 });
 </script>
+
 
 ###########//3 样式部分scss
 

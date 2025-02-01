@@ -1,21 +1,15 @@
 // src/utils/drawRadar.ts
-export interface RadarSymbolProps {
-  mode: "ceiling" | "wall";
-  position: { x: number; y: number };
-  rotation: number;
-  scale: number;
-  selected: boolean;
-}
+import type { ObjectProperties } from '../stores/types';
 
 export function drawRadarSymbol(
-  ctx: CanvasRenderingContext2D,
-  props: RadarSymbolProps,
+	ctx: CanvasRenderingContext2D,
+	radar: ObjectProperties,
+	scale: number,
 ) {
-  const { mode, scale } = props;
-
-  drawCoordinateLines(ctx, mode, scale);
-  drawRadarCircles(ctx, scale);
-  drawLEDIndicator(ctx, mode, scale);
+	const mode = radar.mode || 'ceiling';
+	drawCoordinateLines(ctx, mode, scale);
+	drawRadarCircles(ctx, scale);
+	drawLEDIndicator(ctx, mode, scale);
 }
 
 function drawCoordinateLines(
@@ -106,36 +100,34 @@ function drawLEDIndicator(
   ctx.fillText(mode === "ceiling" ? "C" : "W", 0, textY);
 }
 
-export interface RadarBoundary {
-  leftX: number;
-  rightX: number;
-  frontY: number;
-  rearY: number;
-}
+
 
 export function drawRadarBoundary(
   ctx: CanvasRenderingContext2D,
-  mode: "ceiling" | "wall",
-  boundary: RadarBoundary,
+  radar: ObjectProperties,
   scale: number,
 ) {
   ctx.beginPath();
   ctx.strokeStyle = "rgba(1, 5, 35, 0.8)";
   ctx.lineWidth = 0.5;
   ctx.setLineDash([5, 5]);
+  
+  const mode = radar.mode || 'ceiling';
+  const modeConfig = mode === 'ceiling' ? radar.ceiling : radar.wall;
+  const boundary = modeConfig.boundary;
 
   const bounds =
     mode === "ceiling"
       ? {
-          left: -boundary.leftX * scale,
-          right: boundary.rightX * scale,
-          top: boundary.frontY * scale,
-          bottom: -boundary.rearY * scale,
+          left: -boundary.leftH * scale,
+          right: boundary.rightH * scale,
+          top: boundary.frontV * scale,
+          bottom: -boundary.rearV * scale,
         }
       : {
-          left: -boundary.leftX * scale,
-          right: boundary.rightX * scale,
-          top: -boundary.frontY * scale,
+          left: -boundary.leftH * scale,
+          right: boundary.rightH * scale,
+          top: -boundary.frontV * scale,
           bottom: 0,
         };
 

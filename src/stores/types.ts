@@ -1,92 +1,65 @@
-// stores/types.ts
-export interface Point {
-  x: number;
-  y: number;
-}
 
-export interface Size {
-  length: number;
-  width: number;
-}
+export interface Point {
+	x: number;
+	y: number;
+  }
 
 export interface ObjectProperties {
-  typeValue?: number;    // 新增：雷达定义的类型值 1-Other,2-bed,3-exclude,4-door,5-monitorBed
-  height?: number;
-  mode?: "ceiling" | "wall";
-  isMonitored?: boolean;
-  showBoundary?: boolean;
-  showSignal?: boolean;
-  borderOnly?: boolean;
-  boundary?: {
-    // 添加 boundary 属性
-    leftX: number;
-    rightX: number;
-    frontY: number;
-    rearY: number;
-  };
-  // 人物相关属性
-  posture?: number; // 姿态
-  isWarning?: boolean; // 警告状态
-}
+    // 基础属性(所有对象必需)
+	typeValue: number;    // 类型值(1-Other, 2-bed等)
+	typeName: string;     // 类型名称
+	id: string;
+	name: string;
+	position: Point; 
+	isLocked: boolean;
 
-export interface RadarObject {
-  id: string;
-  type: string;
-  name: string;
-  position: Point;
-  size: Size;
+	
+  // 雷达特有属性
+  HFOV?: number;    
+  VFOV?: number;        
   rotation: number;
-  isLocked: boolean;
-  properties: ObjectProperties;
-}
+  mode?: "ceiling" | "wall";
 
-export interface RadarPosition {
-	h: number       // 水平方向位置，左负右正
-	v: number       // 垂直方向位置，下负上正
-	height: number  // 雷达安装高度
-  }
-/*
-export interface RadarBoundary {
-  v1: Point; // (-,-)
-  v2: Point; // (+,-)
-  v3: Point; // (-,+)
-  v4: Point; // (+,+)
-}
-*/
-
-export interface RadarBoundary {
-	// 水平方向边界
-	hLeft: number    // 替代 leftX
-	hRight: number   // 替代 rightX
-	// 垂直方向边界
-	vFront: number   // 替代 frontY
-	vRear: number    // 替代 rearY
-  }
-
-export interface BoundarySettings {
+  // 按模式分组的属性
   ceiling: {
-    leftX: number; // 左边界，正值
-    rightX: number; // 右边界，负值
-    topY: number; // 上边界，负值
-    bottomY: number; // 下边界，正值
+    height: {
+      min: number;   // 150
+      max: number;   // 330
+      default: number; // 280
+      step: number;  // 10
+    };
+    boundary: {
+      leftH: number;  // 300
+      rightH: number; // 300
+      frontV: number; // 200
+      rearV: number;  // 200
+    };
   };
   wall: {
-    leftX: number; // 左边界，正值
-    rightX: number; // 右边界，负值
-    topY: number; // 固定为0
-    bottomY: number; // 下边界，正值
+    height: {
+      min: number;   // 150
+      max: number;   // 330
+      default: number; // 150
+      step: number;  // 10
+    };
+    boundary: {
+      leftH: number;  // 300
+      rightH: number; // 300
+      frontV: number; // 400
+      rearV: number;  // 0
+    };
   };
+  showBoundary?: boolean;
+  showSignal?: boolean;
+
+	// 其他对象特有属性
+	length: number;
+	width: number;
+	isMonitored?: boolean;  // 床
+	borderOnly?: boolean;   // Other
 }
 
-export interface RadarSettings {
-  mode: "ceiling" | "wall";
-  height: number;
-  position: Point;
-  rotation: number;
-  boundary: RadarBoundary;
-  showBoundary: boolean;
-  showSignal: boolean;
-}
+
 
 // 人员数据接口
 export interface PersonData {

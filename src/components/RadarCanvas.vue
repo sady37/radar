@@ -23,13 +23,17 @@
   <script setup lang="ts">
   // 1. 导入
 import { ref, onMounted, watch, reactive } from 'vue'
-import { useRadarStore } from '../stores/radar'
+//import { useRadarStore } from '../stores/radar'
+//import type { RadarObject, ObjectProperties, BoundarySettings, Point } from '../stores/types'  // 添加 Point
+
+import type { ObjectProperties, Point } from "../stores/types";
 import { useObjectsStore } from '../stores/objects'
 import { useMouseStore } from '../stores/mouse'
 import { useCanvasStore } from '../stores/canvas'
 import { useRadarDataStore } from '../stores/radarData'  // 添加
 import { drawRadarBoundary, drawRadarSymbol } from '../utils/drawRadar'
-import type { RadarObject, ObjectProperties, BoundarySettings, Point } from '../stores/types'  // 添加 Point
+import { drawPosture } from '../utils/drawPosture';
+//import { drawTrajectory } from '../utils/trajectoryUtils';
 
   
   // 2. 组件状态定义
@@ -42,11 +46,8 @@ import type { RadarObject, ObjectProperties, BoundarySettings, Point } from '../
   const mousePosition = reactive({ x: 0, y: 0 })
   const dragStartPos = reactive({ x: 0, y: 0 })
 
-  //const canvasStore.width = canvasStore.width;
-  //const canvasStore.height = canvasStore.height;
 
   // Store初始化
-  const radarStore = useRadarStore()
   const objectsStore = useObjectsStore()
   const mouseStore = useMouseStore()
   const canvasStore = useCanvasStore()
@@ -213,11 +214,11 @@ import type { RadarObject, ObjectProperties, BoundarySettings, Point } from '../
 	  const dy = logicalY - obj.position.y;
 
 	  // 区分不同类型对象的检测范围
-	  if (obj.type === 'Radar') {
+	  if (obj.typeName === 'Radar') {
 	    return Math.sqrt(dx * dx + dy * dy) <= 15
 	  } else {
-		const halfLength = obj.size.length / 2 + 5;
-		const halfWidth = obj.size.width / 2 + 5;
+		const halfLength = obj.length / 2 + 5;
+		const halfWidth = obj.width / 2 + 5;
 	    return Math.abs(dx) <= halfLength && Math.abs(dy) <= halfWidth
 	    }
 	  })
@@ -226,20 +227,20 @@ import type { RadarObject, ObjectProperties, BoundarySettings, Point } from '../
     }
 
   // 添加选择检测函数 
-  const isPointInObject = (x: number, y: number, obj: RadarObject): boolean => {
+  const isPointInObject = (x: number, y: number, obj: ObjectProperties): boolean => {
     const dx = x - obj.position.x;
     const dy = y - obj.position.y;
 
     // Radar和borderOnly的Other不参与碰撞检测
     if (
-      obj.type === "Radar" ||
-      (obj.type === "Other" && obj.properties.borderOnly)
+      obj.typeName === "Radar" ||
+      (obj.typeName === "Other" && obj.borderOnly)
     ) {
       return false;
     }
 
-    const halfLength = obj.size.length / 2;
-    const halfWidth = obj.size.width / 2;
+    const halfLength = obj.length / 2;
+    const halfWidth = obj.width / 2;
     return Math.abs(dx) <= halfLength && Math.abs(dy) <= halfWidth;
   };
   
@@ -365,13 +366,13 @@ import type { RadarObject, ObjectProperties, BoundarySettings, Point } from '../
 
 
         // 根据对象类型确定选择范围
-        if (obj.type === "Radar") {
+        if (obj.typeName=== "Radar") {
           // 圆形选择区域
           return Math.sqrt(dx * dx + dy * dy) <= 15; // 15为感应半径
         } else {
           // 矩形选择区域，考虑对象尺寸
-          const halfLength = obj.size.length / 2 + 5; // 额外5单位的感应区域
-          const halfWidth = obj.size.width / 2 + 5;
+          const halfLength = obj.length / 2 + 5; // 额外5单位的感应区域
+          const halfWidth = obj.width / 2 + 5;
           return Math.abs(dx) <= halfLength && Math.abs(dy) <= halfWidth;
         }
       });
@@ -381,187 +382,6 @@ import type { RadarObject, ObjectProperties, BoundarySettings, Point } from '../
     } else {
       objectsStore.selectObject(null);
     }
-  };
-
-  const drawObject = (ctx: CanvasRenderingContext2D, obj: RadarObject) => {
-    //	console.log('Drawing object:', obj.id, 'Selected:', objectsStore.selectedId) // 添加调试日志
-    ctx.save();
-    // 现有的位置和旋转变换保持不变...
-    ctx.translate(
-      (canvasStore.width/2) + obj.position.x * scale.value,
-      obj.position.y * scale.value,
-    );
-    ctx.rotate((obj.rotation * Math.PI) / 180);
-    const halfLength = (obj.size.length * scale.value) / 2;
-    const halfWidth = (obj.size.width * scale.value) / 2;
-
-    //先绘制对象本身
-    // 现有的对象绘制代码保持不变...
-    switch (obj.type) {
-      case "Door":
-        ctx.beginPath();
-        ctx.rect(
-          -halfLength,
-          -halfWidth,
-          obj.size.length * scale.value,
-          obj.size.width * scale.value,
-        );
-        ctx.fillStyle = "#add8e6";
-        ctx.fill();
-        ctx.strokeStyle = "#666";
-        ctx.stroke();
-        break;
-
-      case "Bed":
-        ctx.beginPath();
-        ctx.rect(
-          -halfLength,
-          -halfWidth,
-          obj.size.length * scale.value,
-          obj.size.width * scale.value,
-        );
-        ctx.fillStyle = obj.properties.isMonitored ? "#f0e68c" : "#98fb98";
-        ctx.fill();
-        ctx.strokeStyle = "#666";
-        ctx.stroke();
-        break;
-
-      case "Exclude":
-        ctx.beginPath();
-        ctx.rect(
-          -halfLength,
-          -halfWidth,
-          obj.size.length * scale.value,
-          obj.size.width * scale.value,
-        );
-        ctx.fillStyle = "#f0e68c";
-        ctx.fill();
-        ctx.strokeStyle = "#666";
-        ctx.stroke();
-        break;
-
-      case "Other":
-        ctx.beginPath();
-        ctx.rect(
-          -halfLength,
-          -halfWidth,
-          obj.size.length * scale.value,
-          obj.size.width * scale.value,
-        );
-        if (!obj.properties.borderOnly) {
-          ctx.fillStyle = "#d3d3d3";
-          ctx.fill();
-        }
-        ctx.strokeStyle = "#666";
-        ctx.stroke();
-        break;
-
-      case "Radar":
-        // 调用独立的绘制函数
-        drawRadarSymbol(ctx, {
-          mode: obj.properties.mode || "ceiling",
-          position: obj.position,
-          rotation: obj.rotation,
-          scale: scale.value,
-          selected: obj.id === objectsStore.selectedId,
-        });
-
-        // 如果需要显示边界
-        if (obj.properties.showBoundary) {
-          drawRadarBoundary(
-            ctx,
-            obj.properties.mode || "ceiling",
-            obj.properties.boundary || {
-              leftX: 300,
-              rightX: 300,
-              frontY: obj.properties.mode === "ceiling" ? 200 : 400,
-              rearY: obj.properties.mode === "ceiling" ? 200 : 0,
-            },
-            scale.value,
-          );
-        }
-        break;
-
-      case "M":
-        // 绘制三角形
-        const size = 10 * scale.value;
-        ctx.beginPath();
-        ctx.moveTo(0, -size);
-        ctx.lineTo(-size, size);
-        ctx.lineTo(size, size);
-        ctx.closePath();
-        ctx.fillStyle = "#1890ff";
-        ctx.fill();
-        break;
-    }
-
-    // 后绘制选中高亮
-    if (obj.id === objectsStore.selectedId) {
-      ctx.strokeStyle = "#1890ff";
-      ctx.lineWidth = 2;
-      if (obj.type === "Radar") {
-        ctx.beginPath();
-        ctx.arc(0, 0, 12 * scale.value, 0, Math.PI * 2);
-        ctx.stroke();
-      } else {
-        const halfLength = ((obj.size.length + 4) * scale.value) / 2;
-        const halfWidth = ((obj.size.width + 4) * scale.value) / 2;
-        ctx.strokeRect(
-          -halfLength,
-          -halfWidth,
-          (obj.size.length + 4) * scale.value,
-          (obj.size.width + 4) * scale.value,
-        );
-      }
-    }
-
-    ctx.restore();
-  };
-
-  const drawObjects = (ctx: CanvasRenderingContext2D) => {
-    // 非雷达对象
-    objectsStore.objects
-      .filter((obj) => obj.type !== "Radar")
-      .forEach((obj) => drawObject(ctx, obj));
-
-    // 绘制人员
-    drawPersons(ctx);
-
-    // 雷达对象最后绘制
-    objectsStore.objects
-      .filter((obj) => obj.type === "Radar")
-      .forEach((obj) => drawObject(ctx, obj));
-  };
-
-  const drawPersons = (ctx: CanvasRenderingContext2D) => {
-    const persons = radarDataStore.currentPersons;
-    persons.forEach((person) => {
-      if (person.id === 88) return; // 跳过无人标记
-
-      const position: Point = {
-        x: person.position.x,
-        y: person.position.y,
-      };
-
-      const isWarningState = [2, 5, 7, 10].includes(person.posture);
-
-      drawObject(ctx, {
-        id: `person_${person.id}`,
-        type: "person",
-        name: `Person_${person.id}`,
-        position: position,
-        size: {
-          length: 43,
-          width: 43,
-        },
-        rotation: 0,
-        isLocked: false,
-        properties: {
-          posture: person.posture,
-          isWarning: isWarningState,
-        },
-      });
-    });
   };
 
   const updateMousePosition = (event: MouseEvent) => {
@@ -623,7 +443,7 @@ import type { RadarObject, ObjectProperties, BoundarySettings, Point } from '../
   };
 };
   
-	const drawObject = (ctx: CanvasRenderingContext2D, obj: RadarObject) => {
+  const drawObject = (ctx: CanvasRenderingContext2D, obj: ObjectProperties) => {
     //	console.log('Drawing object:', obj.id, 'Selected:', objectsStore.selectedId) // 添加调试日志
     ctx.save();
     // 现有的位置和旋转变换保持不变...
@@ -632,24 +452,30 @@ import type { RadarObject, ObjectProperties, BoundarySettings, Point } from '../
        obj.position.y * scale.value,
     );
     ctx.rotate((obj.rotation * Math.PI) / 180);
-    const halfLength = (obj.size.length * scale.value) / 2;
-    const halfWidth = (obj.size.width * scale.value) / 2;
+    const halfLength = (obj.length * scale.value) / 2;
+    const halfWidth = (obj.width * scale.value) / 2;
 
     //先绘制对象本身
     // 现有的对象绘制代码保持不变...
-    switch (obj.type) {
+    switch (obj.typeName) {
       case "Door":
         ctx.beginPath();
         ctx.rect(
           -halfLength,
           -halfWidth,
-          obj.size.length * scale.value,
-          obj.size.width * scale.value,
+          obj.length * scale.value,
+          obj.width * scale.value,
         );
         ctx.fillStyle = "#add8e6";
         ctx.fill();
         ctx.strokeStyle = "#666";
         ctx.stroke();
+		// 添加名称标签
+		ctx.fillStyle = "#000";
+      	ctx.font = `${12 * scale.value}px Arial`;
+      	ctx.textAlign = "center";
+      	ctx.textBaseline = "middle";
+      	ctx.fillText(obj.name, 0, 0);  // 在对象中心绘制名称
         break;
 
       case "Bed":
@@ -657,13 +483,18 @@ import type { RadarObject, ObjectProperties, BoundarySettings, Point } from '../
         ctx.rect(
           -halfLength,
           -halfWidth,
-          obj.size.length * scale.value,
-          obj.size.width * scale.value,
+          obj.length * scale.value,
+          obj.width * scale.value,
         );
-        ctx.fillStyle = obj.properties.isMonitored ? "#f0e68c" : "#98fb98";
+        ctx.fillStyle = obj.isMonitored ? "#f0e68c" : "#98fb98";
         ctx.fill();
         ctx.strokeStyle = "#666";
         ctx.stroke();
+		ctx.fillStyle = "#000";
+      	ctx.font = `${12 * scale.value}px Arial`;
+      	ctx.textAlign = "center";
+      	ctx.textBaseline = "middle";
+      	ctx.fillText(obj.name, 0, 0);  // 在对象中心绘制名称
         break;
 
       case "Exclude":
@@ -671,8 +502,8 @@ import type { RadarObject, ObjectProperties, BoundarySettings, Point } from '../
         ctx.rect(
           -halfLength,
           -halfWidth,
-          obj.size.length * scale.value,
-          obj.size.width * scale.value,
+          obj.length * scale.value,
+          obj.width * scale.value,
         );
         ctx.fillStyle = "#f0e68c";
         ctx.fill();
@@ -685,10 +516,10 @@ import type { RadarObject, ObjectProperties, BoundarySettings, Point } from '../
         ctx.rect(
           -halfLength,
           -halfWidth,
-          obj.size.length * scale.value,
-          obj.size.width * scale.value,
+          obj.length * scale.value,
+          obj.width * scale.value,
         );
-        if (!obj.properties.borderOnly) {
+        if (!obj.borderOnly) {
           ctx.fillStyle = "#d3d3d3";
           ctx.fill();
         }
@@ -698,7 +529,7 @@ import type { RadarObject, ObjectProperties, BoundarySettings, Point } from '../
 
 		case "Wall":
 		  ctx.beginPath();
-		  ctx.rect(-halfLength, -halfWidth, obj.size.length * scale.value, obj.size.width * scale.value);
+		  ctx.rect(-halfLength, -halfWidth, obj.length * scale.value, obj.width * scale.value);
 		  ctx.fillStyle = "#4a4a4a";  // 灰黑色
 		  ctx.fill();
 		  ctx.strokeStyle = "#666";
@@ -708,7 +539,7 @@ import type { RadarObject, ObjectProperties, BoundarySettings, Point } from '../
 		case "TV":
 		  // 与 Exclude 使用相同的绘制逻辑
 		  ctx.beginPath();
-		  ctx.rect(-halfLength, -halfWidth, obj.size.length * scale.value, obj.size.width * scale.value);
+		  ctx.rect(-halfLength, -halfWidth, obj.length * scale.value, obj.width * scale.value);
 		  ctx.fillStyle = "#f0e68c";
 		  ctx.fill();
 		  ctx.strokeStyle = "#666";
@@ -717,32 +548,16 @@ import type { RadarObject, ObjectProperties, BoundarySettings, Point } from '../
 
 
       case "Radar":
-        // 调用独立的绘制函数
-        drawRadarSymbol(ctx, {
-          mode: obj.properties.mode || "ceiling",
-          position: obj.position,
-          rotation: obj.rotation,
-          scale: scale.value,
-          selected: obj.id === objectsStore.selectedId,
-        });
+		  // 直接传整个对象
+		  drawRadarSymbol(ctx, obj, scale.value);
 
-        // 如果需要显示边界
-        if (obj.properties.showBoundary) {
-          drawRadarBoundary(
-            ctx,
-            obj.properties.mode || "ceiling",
-            obj.properties.boundary || {
-              leftX: 300,
-              rightX: 300,
-              frontY: obj.properties.mode === "ceiling" ? 200 : 400,
-              rearY: obj.properties.mode === "ceiling" ? 200 : 0,
-            },
-            scale.value,
-          );
-        }
+		  // 如果需要显示边界
+		  if (obj.showBoundary) {
+		    drawRadarBoundary(ctx, obj, scale.value);
+		  }
         break;
 
-      case "M":
+      case "Moving":
         // 绘制三角形
         const size = 10 * scale.value;
         ctx.beginPath();
@@ -759,18 +574,18 @@ import type { RadarObject, ObjectProperties, BoundarySettings, Point } from '../
     if (obj.id === objectsStore.selectedId) {
       ctx.strokeStyle = "#1890ff";
       ctx.lineWidth = 2;
-      if (obj.type === "Radar") {
+      if (obj.typeName=== "Radar") {
         ctx.beginPath();
         ctx.arc(0, 0, 12 * scale.value, 0, Math.PI * 2);
         ctx.stroke();
       } else {
-        const halfLength = ((obj.size.length + 4) * scale.value) / 2;
-        const halfWidth = ((obj.size.width + 4) * scale.value) / 2;
+        const halfLength = ((obj.length + 4) * scale.value) / 2;
+        const halfWidth = ((obj.width + 4) * scale.value) / 2;
         ctx.strokeRect(
           -halfLength,
           -halfWidth,
-          (obj.size.length + 4) * scale.value,
-          (obj.size.width + 4) * scale.value,
+          (obj.length + 4) * scale.value,
+          (obj.width + 4) * scale.value,
         );
       }
     }
@@ -779,51 +594,42 @@ import type { RadarObject, ObjectProperties, BoundarySettings, Point } from '../
   };
 
   const drawPersons = (ctx: CanvasRenderingContext2D) => {
-    const persons = radarDataStore.currentPersons;
-    persons.forEach((person) => {
-      if (person.id === 88) return; // 跳过无人标记
+	  const persons = radarDataStore.currentPersons;
+	  persons.forEach(person => {
+	    if (person.id === 88) return; // 跳过无人标记
 
-      const position: Point = {
-        x: person.position.x,
-        y: person.position.y,
-      };
+	    /*暂不做绘制轨迹
+		// 如果需要绘制轨迹，先绘制轨迹
+	    if (needDrawTrajectory(person)) {
+	      drawTrajectory(ctx, person, scale.value);
+	    }
+        */
 
-      const isWarningState = [2, 5, 7, 10].includes(person.posture);
+	    // 绘制人物
+	    drawPosture(ctx, {
+	      position: person.position,
+	      rotation: 0,  // 或者其他旋转值
+	      posture: person.posture,
+	      selected: `person_${person.id}` === objectsStore.selectedId  // 转换为字符串比较
+	    }, scale.value);
+	  });
+	};
 
-      drawObject(ctx, {
-        id: `person_${person.id}`,
-        type: "person",
-        name: `Person_${person.id}`,
-        position: position,
-        size: {
-          length: 43,
-          width: 43,
-        },
-        rotation: 0,
-        isLocked: false,
-        properties: {
-          posture: person.posture,
-          isWarning: isWarningState,
-        },
-      });
-    });
-  };
 
-	const drawObjects = (ctx: CanvasRenderingContext2D) => {
-    // 非雷达对象
-    objectsStore.objects
-      .filter((obj) => obj.type !== "Radar")
-      .forEach((obj) => drawObject(ctx, obj));
+  const drawObjects = (ctx: CanvasRenderingContext2D) => {
+	    // 非雷达对象
+	    objectsStore.objects
+	      .filter((obj) => obj.typeName!== "Radar")
+	      .forEach((obj) => drawObject(ctx, obj));
 
-    // 绘制人员
-    drawPersons(ctx);
+	    // 绘制人员
+	    drawPersons(ctx);
 
-    // 雷达对象最后绘制
-    objectsStore.objects
-      .filter((obj) => obj.type === "Radar")
-      .forEach((obj) => drawObject(ctx, obj));
-  };
-
+	    // 雷达对象最后绘制
+	    objectsStore.objects
+	      .filter((obj) => obj.typeName=== "Radar")
+	      .forEach((obj) => drawObject(ctx, obj));
+	  };
 
 
   </script>

@@ -1,4 +1,4 @@
-// utils/postureIcons.ts
+//src/utils/postureIcons.ts
 
 // 首先定义接口
 export interface PostureIconConfig {

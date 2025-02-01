@@ -1,12 +1,11 @@
 import { defineStore } from "pinia";
-//import type { RadarObject } from './types'
-import type { RadarObject, Point, Size, ObjectProperties } from "./types";
+import type { ObjectProperties, Point } from "./types";
 
 export const useObjectsStore = defineStore("objects", {
   state: () => ({
-    objects: [] as RadarObject[],
+    objects: [] as ObjectProperties[],
     selectedId: null as string | null,
-    copiedObject: null as RadarObject | null,
+    copiedObject: null as ObjectProperties | null,
   }),
 
   getters: {
@@ -18,25 +17,26 @@ export const useObjectsStore = defineStore("objects", {
     getObjectById: (state) => (id: string) =>
       state.objects.find((obj) => obj.id === id),
 
-    getObjectsByType: (state) => (type: string) =>
-      state.objects.filter((obj) => obj.type === type),
-
+	getObjectsByType: (state) => (typeName: string) =>
+		state.objects.filter((obj) => obj.typeName === typeName),
+  
+	  // 确保雷达总是在最上层绘制
     getOrderedObjects: (state) => {
       return [
-        ...state.objects.filter((obj) => obj.type !== "Radar"),
-        ...state.objects.filter((obj) => obj.type === "Radar"),
+        ...state.objects.filter((obj) => obj.mode === undefined),  // 非雷达对象
+        ...state.objects.filter((obj) => obj.mode !== undefined),  // 雷达对象
       ];
     },
   },
 
   actions: {
-    createObject(data: Omit<RadarObject, "id">) {
+    createObject(data: Omit<ObjectProperties, "id">) {
       const id = Date.now().toString();
       this.objects.push({ ...data, id });
       return id;
     },
 
-    updateObject(id: string, updates: Partial<RadarObject>) {
+    updateObject(id: string, updates: Partial<ObjectProperties>) {
       const index = this.objects.findIndex((obj) => obj.id === id);
       if (index !== -1) {
         this.objects[index] = { ...this.objects[index], ...updates };
