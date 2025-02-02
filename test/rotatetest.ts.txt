@@ -1,0 +1,193 @@
+// 2. 旋转角度测试
+interface Point { x: number; y: number; }
+interface ObjectProperties {
+  position: Point;
+  length: number;
+  width: number;
+  rotation: number;
+}
+
+function getObjectVertices(obj: ObjectProperties): Point[] {
+  const { position, length, width, rotation } = obj;
+  const rad = (rotation * Math.PI) / 180;
+  const halfLength = length / 2;
+  const halfWidth = width / 2;
+  
+  return [
+    // 左上
+    {
+      x: position.x - halfLength * Math.cos(rad) + halfWidth * Math.sin(rad),
+      y: position.y - halfLength * Math.sin(rad) - halfWidth * Math.cos(rad)
+    },
+    // 右上
+    {
+      x: position.x + halfLength * Math.cos(rad) + halfWidth * Math.sin(rad),
+      y: position.y + halfLength * Math.sin(rad) - halfWidth * Math.cos(rad)
+    },
+    // 左下
+    {
+      x: position.x - halfLength * Math.cos(rad) - halfWidth * Math.sin(rad),
+      y: position.y - halfLength * Math.sin(rad) + halfWidth * Math.cos(rad)
+    },
+    // 右下
+    {
+      x: position.x + halfLength * Math.cos(rad) - halfWidth * Math.sin(rad),
+      y: position.y + halfLength * Math.sin(rad) + halfWidth * Math.cos(rad)
+    }
+  ];
+}
+
+// 测试不同角度的物体
+const testAngles = [0, 45, 90, 135, 180, 225, 270, 315];
+const testObject = {
+  position: { x: 100, y: 100 },
+  length: 200,
+  width: 100,
+  rotation: 0
+};
+
+console.log("Testing Object Rotation:");
+testAngles.forEach(angle => {
+  console.log(`\nRotation ${angle} degrees:`);
+  const rotatedObj = { ...testObject, rotation: angle };
+  const vertices = getObjectVertices(rotatedObj);
+  
+  // 打印每个顶点
+  vertices.forEach((vertex, idx) => {
+    console.log(`Vertex ${idx}: (${vertex.x.toFixed(1)}, ${vertex.y.toFixed(1)})`);
+  });
+  
+  // 计算对角线长度验证（应该保持不变）
+  const diagonal1 = Math.sqrt(
+    Math.pow(vertices[0].x - vertices[3].x, 2) + 
+    Math.pow(vertices[0].y - vertices[3].y, 2)
+  );
+  const diagonal2 = Math.sqrt(
+    Math.pow(vertices[1].x - vertices[2].x, 2) + 
+    Math.pow(vertices[1].y - vertices[2].y, 2)
+  );
+  
+  console.log(`Diagonals: ${diagonal1.toFixed(1)}, ${diagonal2.toFixed(1)}`);
+});
+
+// 计算物体的包围盒（最小和最大坐标）
+function calculateBoundingBox(vertices: Point[]) {
+  const xs = vertices.map(v => v.x);
+  const ys = vertices.map(v => v.y);
+  return {
+    min: { x: Math.min(...xs), y: Math.min(...ys) },
+    max: { x: Math.max(...xs), y: Math.max(...ys) }
+  };
+}
+
+// 打印包围盒信息
+console.log("\nBounding Box Tests:");
+testAngles.forEach(angle => {
+  const rotatedObj = { ...testObject, rotation: angle };
+  const vertices = getObjectVertices(rotatedObj);
+  const boundingBox = calculateBoundingBox(vertices);
+  console.log(`\nRotation ${angle} degrees:`);
+  console.log(`Min: (${boundingBox.min.x.toFixed(1)}, ${boundingBox.min.y.toFixed(1)})`);
+  console.log(`Max: (${boundingBox.max.x.toFixed(1)}, ${boundingBox.max.y.toFixed(1)})`);
+});
+
+
+Result
+
+Testing Object Rotation:
+
+Rotation 0 degrees:
+Vertex 0: (0.0, 50.0)
+Vertex 1: (200.0, 50.0)
+Vertex 2: (0.0, 150.0)
+Vertex 3: (200.0, 150.0)
+Diagonals: 223.6, 223.6
+
+Rotation 45 degrees:
+Vertex 0: (64.6, -6.1)
+Vertex 1: (206.1, 135.4)
+Vertex 2: (-6.1, 64.6)
+Vertex 3: (135.4, 206.1)
+Diagonals: 223.6, 223.6
+
+Rotation 90 degrees:
+Vertex 0: (150.0, -0.0)
+Vertex 1: (150.0, 200.0)
+Vertex 2: (50.0, 0.0)
+Vertex 3: (50.0, 200.0)
+Diagonals: 223.6, 223.6
+
+Rotation 135 degrees:
+Vertex 0: (206.1, 64.6)
+Vertex 1: (64.6, 206.1)
+Vertex 2: (135.4, -6.1)
+Vertex 3: (-6.1, 135.4)
+Diagonals: 223.6, 223.6
+
+Rotation 180 degrees:
+Vertex 0: (200.0, 150.0)
+Vertex 1: (0.0, 150.0)
+Vertex 2: (200.0, 50.0)
+Vertex 3: (-0.0, 50.0)
+Diagonals: 223.6, 223.6
+
+Rotation 225 degrees:
+Vertex 0: (135.4, 206.1)
+Vertex 1: (-6.1, 64.6)
+Vertex 2: (206.1, 135.4)
+Vertex 3: (64.6, -6.1)
+Diagonals: 223.6, 223.6
+
+Rotation 270 degrees:
+Vertex 0: (50.0, 200.0)
+Vertex 1: (50.0, 0.0)
+Vertex 2: (150.0, 200.0)
+Vertex 3: (150.0, -0.0)
+Diagonals: 223.6, 223.6
+
+Rotation 315 degrees:
+Vertex 0: (-6.1, 135.4)
+Vertex 1: (135.4, -6.1)
+Vertex 2: (64.6, 206.1)
+Vertex 3: (206.1, 64.6)
+Diagonals: 223.6, 223.6
+
+Bounding Box Tests:
+
+Rotation 0 degrees:
+Min: (0.0, 50.0)
+Max: (200.0, 150.0)
+
+Rotation 45 degrees:
+Min: (-6.1, -6.1)
+Max: (206.1, 206.1)
+
+Rotation 90 degrees:
+Min: (50.0, -0.0)
+Max: (150.0, 200.0)
+
+Rotation 135 degrees:
+Min: (-6.1, -6.1)
+Max: (206.1, 206.1)
+
+Rotation 180 degrees:
+Min: (-0.0, 50.0)
+Max: (200.0, 150.0)
+
+Rotation 225 degrees:
+Min: (-6.1, -6.1)
+Max: (206.1, 206.1)
+
+Rotation 270 degrees:
+Min: (50.0, -0.0)
+Max: (150.0, 200.0)
+
+Rotation 315 degrees:
+Min: (-6.1, -6.1)
+Max: (206.1, 206.1)
+
+旋转角度测试结果显示：
+
+对象顶点在不同角度下计算正确
+对角线长度在旋转过程中保持不变，验证了旋转变换的正确性
+包围盒计算正确反映了物体在不同角度下的实际占用空间

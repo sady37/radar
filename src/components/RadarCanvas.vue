@@ -20,7 +20,7 @@
 	</div>
   </template>
   
-  <script setup lang="ts">
+<script setup lang="ts">
   // 1. 导入
 import { ref, onMounted, watch, reactive } from 'vue'
 //import { useRadarStore } from '../stores/radar'
@@ -178,8 +178,25 @@ import { drawPosture } from '../utils/drawPosture';
 	const obj = objectsStore.objects.find(o => o.id === objectsStore.selectedId)
 	if (!obj || obj.isLocked) return
   
-	isDragging.value = true
-	
+	//isDragging.value = true
+	// Start a timer to delay the drag mode
+	const delay = 200; // Adjust the delay as needed (in milliseconds)
+	  let timer: number | undefined;
+	  timer = window.setTimeout(() => {
+	    isDragging.value = true;
+	    timer = undefined;
+	  }, delay);
+
+  	// Cancel the timer if the mouse is released before the delay
+   	const cancelDrag = () => {
+	    if (timer) {
+	      window.clearTimeout(timer);
+	      timer = undefined;
+	    }
+	  };
+   	window.addEventListener('mouseup', cancelDrag, { once: true });
+
+
 	const rect = canvasRef.value?.getBoundingClientRect()
 	if (!rect) return
 	
@@ -466,7 +483,7 @@ import { drawPosture } from '../utils/drawPosture';
           obj.length * scale.value,
           obj.width * scale.value,
         );
-        ctx.fillStyle = "#add8e6";
+        ctx.fillStyle = "#a0eda0";
         ctx.fill();
         ctx.strokeStyle = "#666";
         ctx.stroke();
@@ -486,7 +503,7 @@ import { drawPosture } from '../utils/drawPosture';
           obj.length * scale.value,
           obj.width * scale.value,
         );
-        ctx.fillStyle = obj.isMonitored ? "#f0e68c" : "#98fb98";
+        ctx.fillStyle = obj.isMonitored ? "#f0e68c" : "#add8e6";
         ctx.fill();
         ctx.strokeStyle = "#666";
         ctx.stroke();
@@ -632,10 +649,10 @@ import { drawPosture } from '../utils/drawPosture';
 	  };
 
 
-  </script>
+</script>
   
 
-  <style lang="scss" scoped>
+<style lang="scss" scoped>
 .radar-canvas {
   position: relative;
   width: 620px;

@@ -18,8 +18,6 @@ src/
 │   │   ├── PostureIndicator.vue  #人体姿态：
 │   │   ├── TrajectoryLine.vue  #移动物体轨迹线，本项目暂不实现
 │   │   └── VitalsDisplay.vue  #人的生理指标显示
-│   ├── radar/                 # 雷达相关组件
-│   │   ├── PersonSymbol.vue  #人的SVG，根据状态显示不同icon
 │   ├── RadarCanvas.vue     # 主画布组件
 │   └── RadarToolbar.vue    # 工具栏组件
 ├── stores/                 # 状态管理
@@ -29,12 +27,12 @@ src/
 │   ├── radarData.ts        # 存放真实雷达传送过的多人的数据:坐标、姿态、生理指标等
 │   └── types.ts            #对象属性定义
 └── utils/                 # 工具函数
-    ├── drawRadar.ts       #绘制雷达
-    ├── drawRadar.ts       #计算雷达的边界，回传边界内的固定物体4点坐标，不传Wall	
-	├── drawRadar.ts       #备选的人体默认绘制：椭圆形
-	├── mockRadarData.ts   #模拟人体数据生成            
-	├── postureIcons.ts    #人体姿态icon
-    └── trajectoryUtils.ts  #绘制运动物体轨迹
+	├── drawRadar.ts       # 绘制雷达
+	├── radarUtils.ts       #计算雷达的边界，回传边界内的固定物体4点坐标，不传Wall
+	├── postureIcons.ts    # 人体姿态SVG图标定义集合，纯数据/常量文件
+	├── drawPosture.ts     # 人体绘制主函数(包含姿态图标和默认椭圆)
+	├── mockRadarData.ts   # 模拟人体数据生成         
+	└── trajectoryUtils.ts # 绘制运动物体轨迹
 
 
 当前已完成画布、toolbar等组件，画布坐标、对象创建、移动、旋转、改变大小，雷达模型绘制；人体模板、人体模拟数据框架已完成，但未应用。
@@ -398,8 +396,19 @@ object.ts仍保持不变。
 	carvar.vue 使用drawPerson（），作为人体绘制的统一入口  ，drawPerson再调trajectoryUtils和drawPosture
 	utils/
 	├── drawRadar.ts       # 绘制雷达
+	├── radarUtils.ts       #计算雷达的边界，回传边界内的固定物体4点坐标，不传Wall
 	├── postureIcons.ts    # 人体姿态SVG图标定义集合，纯数据/常量文件
 	├── drawPosture.ts     # 人体绘制主函数(包含姿态图标和默认椭圆)
 	├── mockRadarData.ts   # 模拟人体数据生成         
 	└── trajectoryUtils.ts # 绘制运动物体轨迹
+  ###3.1
+  输出指定边界内的固定物体坐标，不含Wall
+  设置举例：ceiling检测边界为X轴±300，Y轴±200，则传输格式为：{-300,-200; 300,-200; -300,200; 300,200}
+  设置举例：侧装检测边界为X轴±300，Y轴0-400，则传输格式为：{-300,0; 300,0; -300,400; 300,400}
 
+  ###3.2
+  解决toolbox内部UI逻辑：
+     点击template模板时，selectObjectType清除活动对像，重置对像属性为默认值，同时更新ObjectName输入框和isLocked开关
+	 点击create键：createObject创建对像后，取消所有选中，重置对像属性为默认值，同时更新ObjectName输入框和isLocked开关
+	 点击set键, 设置对像值，取消对像及模板选中
+  解决canvas对像传递到toolbar,toolbar watch(selectedId),同步属性及ObjectNmae框及isLocked开关

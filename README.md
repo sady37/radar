@@ -52,3 +52,15 @@ src/
 	drawObjects() - 组织绘制顺序
 	drawObject() - 处理固定物体和雷达
 	drawPersons() - 专门处理人
+20250201 v3.1
+  ###3.1
+  输出指定边界内的固定物体坐标，不含Wall
+  设置举例：ceiling检测边界为X轴±300，Y轴±200，则传输格式为：{-300,-200; 300,-200; -300,200; 300,200}
+  设置举例：侧装检测边界为X轴±300，Y轴0-400，则传输格式为：{-300,0; 300,0; -300,400; 300,400}
+
+20250202  V3.2
+  解决toolbox内部UI逻辑：
+     点击template模板时，selectObjectType清除活动对像，重置对像属性为默认值，同时更新ObjectName输入框和isLocked开关
+	 点击create键：createObject创建对像后，取消所有选中，重置对像属性为默认值，同时更新ObjectName输入框和isLocked开关
+	 点击set键, 设置对像值，取消对像及模板选中
+  解决canvas对像传递到toolbar,toolbar watch(selectedId),同步属性及ObjectNmae框及isLocked开关

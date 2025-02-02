@@ -25,7 +25,7 @@
             <div class="m-icon">Moving</div>
           </template>
           <template v-else>
-            {{ obj.label }}
+            {{ obj.label }}   
           </template>
         </button>
       </div>
@@ -440,54 +440,97 @@ watch(
      if (obj) {
        hasSelectedObject.value = true;
        selectedType.value = obj.typeName;
+	   objectName.value = obj.name;
        properties.name = obj.name;
        properties.position = obj.position;
        properties.rotation = obj.rotation;
        properties.isLocked = obj.isLocked;
+	   isLocked.value = obj.isLocked; // 根据选中对象的isLocked属性设置isLocked.value
 
        // 同步固定物体属性
        properties.length = obj.length;
        properties.width = obj.width;
 
-       // 同步雷达特有属性
-       if (obj.mode) {  // 如果是雷达对象
-         properties.mode = obj.mode;
-         properties[obj.mode] = obj[obj.mode];
-         properties.HFOV = obj.HFOV || 140;
-         properties.VFOV = obj.VFOV || 120;
-         properties.showBoundary = obj.showBoundary || false;
-         properties.showSignal = obj.showSignal || false;
-       }
+        // 如果是雷达，同步雷达特有属性
+        if (obj.typeName === 'Radar') {
+          properties.mode = obj.mode;
+          properties.HFOV = obj.HFOV;
+          properties.VFOV = obj.VFOV;
+          properties.ceiling = obj.ceiling;
+          properties.wall = obj.wall;
+          properties.showBoundary = obj.showBoundary;
+          properties.showSignal = obj.showSignal;
+        }
 
        // 同步其他特有属性
        properties.isMonitored = obj.isMonitored || false;
        properties.borderOnly = obj.borderOnly || false;
      }
-   } else {
-     editMode.value = null;
-   }
+   } 
  }
 );
 
+watch(  () => isLocked.value,  (newValue) => {
+    if (objectsStore.selectedId) {
+      const obj = objectsStore.objects.find((o) => o.id === objectsStore.selectedId);
+      if (obj) {
+        objectsStore.updateObject(objectsStore.selectedId, {
+          ...obj,
+          isLocked: newValue,
+        });
+      }
+    }
+  },
+);
 
 
 // 5. 函数定义 (确保每个函数只定义一次)
-
+//选取模板时，取消活动对象，重置属情、objectName和isLocked的UI
 const selectObjectType = (typeName: string) => {
   editMode.value = "template";
+  objectsStore.selectObject(null); // 点击模板时，取消画布区的选中,避免同时编辑活动对象
   selectedType.value = typeName;
+  objectName.value = typeName;  //  设置默认名称为模板类型
+  isLocked.value =false;
   const objType = objectTypes.find((t) => t.typeName === typeName);
   if (objType) {
     properties.length = objType.defaultLength;
     properties.width = objType.defaultWidth;
+    properties.rotation = 0;
+    properties.isLocked = false;
+	properties.isMonitored = false;
+    properties.borderOnly = false;
 
     if (typeName === "Radar") {
-      currentModeConfig.value.height.default = 
+     /*	  	
+	  currentModeConfig.value.height.default = 
         properties.mode === "ceiling" ? properties.ceiling.height.default : properties.wall.height.default;
+	  currentModeConfig.value.boundary.leftH=
+	    properties.mode === "ceiling" ? properties.ceiling.boundary.leftH : properties.wall.boundary.leftH;
+	  currentModeConfig.value.boundary.rightH=
+	    properties.mode === "ceiling" ? properties.ceiling.boundary.rightH : properties.wall.boundary.rightH;
+	  currentModeConfig.value.boundary.frontV=
+	    properties.mode === "ceiling" ? properties.ceiling.boundary.frontV : properties.wall.boundary.frontV;
+	  currentModeConfig.value.boundary.rearV=
+	    properties.mode === "ceiling" ? properties.ceiling.boundary.rearV : properties.wall.boundary.rearV;	
+	*/
+	  properties.mode = "ceiling";
+      properties.ceiling = {
+        height: { min: 150, max: 330, default: 280, step: 10 },
+        boundary: { leftH: 300, rightH: 300, frontV: 200, rearV: 200 },
+      };
+      properties.wall = {
+        height: { min: 150, max: 330, default: 150, step: 10 },
+        boundary: { leftH: 300, rightH: 300, frontV: 400, rearV: 0 },
+      };
+      properties.showBoundary = false;
+      properties.showSignal = false;
+	
     }
   }
 };
 
+/*多余的，setButton只用 updateObject()
 const handleSetButton = () => {
   const objectData: Omit<ObjectProperties, "id"> = {
     typeValue: objectTypes.find(t => t.typeName === selectedType.value)?.typeValue || 0,
@@ -519,13 +562,14 @@ const handleSetButton = () => {
   selectedType.value = "";
   //console.log("After update/create:", objectsStore.objects);
 };
+*/
 
 const createObject = () => {
   const selectedObj = objectTypes.find((t) => t.typeName === selectedType.value);
   const objectData: Omit<ObjectProperties, "id"> = {
       typeValue: selectedObj?.typeValue || 0,  // 从 objectTypes 中获取对应的 typeValue
 	  typeName: selectedType.value,
-	  name: objectName.value || selectedType.value,
+	  name: objectName.value ,
 	  position: {
 		  x: objectsStore.objects.length * 20,
 		  y: canvasStore.height / 2 + objectsStore.objects.length * 20,
@@ -533,7 +577,7 @@ const createObject = () => {
 	  length: properties.length,
 	  width: properties.width,
 	  rotation: 0,
-	  isLocked: false,
+	  isLocked: isLocked.value, // 根据UI的选择设置isLocked属性
 	  mode: properties.mode,
 	  ceiling: properties.ceiling, // 直接使用具体的模式数据
 	  wall: properties.wall, // 直接使用具体的模式数据
@@ -544,8 +588,29 @@ const createObject = () => {
   };
 
   const id = objectsStore.createObject(objectData);
-  selectedType.value = "";  // 清空选择的模板
-  editMode.value = null;
+  
+    // 重置 toolbar 区的属性值
+	  selectedType.value = "";
+	  objectName.value = "";
+	  properties.length = 50;
+	  properties.width = 50;
+	  properties.rotation = 0;
+	  properties.isLocked = false;
+	  isLocked.value = false; // UI修改 isLocked.value
+	  properties.mode = "ceiling";
+	  properties.ceiling = {
+	    height: { min: 150, max: 330, default: 280, step: 10 },
+	    boundary: { leftH: 300, rightH: 300, frontV: 200, rearV: 200 },
+	  };
+	  properties.wall = {
+	    height: { min: 150, max: 330, default: 150, step: 10 },
+	    boundary: { leftH: 300, rightH: 300, frontV: 400, rearV: 0 },
+	  };
+	  properties.showBoundary = false;
+	  properties.showSignal = false;
+	  properties.isMonitored = false;
+	  properties.borderOnly = false;
+	  editMode.value = null;
 };
 
 const updateObject = () => {
@@ -564,6 +629,7 @@ const updateObject = () => {
       borderOnly: properties.borderOnly,
     };
     objectsStore.updateObject(objectsStore.selectedId, objectData);
+	objectsStore.selectObject(null);  // 设置完后，取消选中对象
   }
 };
 

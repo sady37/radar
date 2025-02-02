@@ -10,5 +10,5 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.vue"]
+  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.vue", "back/walltest.ts", "back/rotatetest.ts", "back/boundarytest2.ts", "back/boundarytest1.ts", "back/boundaryLimit.ts"]
 }
