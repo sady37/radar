@@ -649,24 +649,39 @@ import { generateRadarReport } from '../utils/radarUtils';
 		
 		 
 		  // 在所有对象绘制完成后，输出雷达报告
-		  const radar = objectsStore.objects.find(obj => obj.typeName === 'Radar');
-			  if (radar) {
-			    const report = generateRadarReport(radar, objectsStore.objects);
-			    console.log('Radar Report:', {
-			      radarId: report.radarId,
-			      mode: report.mode,
-			      boundary: report.boundaryVertices,
-			      objectsCount: report.objects.length,
-			      objects: report.objects.map(obj => ({
-			        id: obj.id,
-			        type: obj.typeValue,
-			        radarCoords: obj.radarVertices?.map(v => 
-			          `(H:${Math.round(v.h)}, V:${Math.round(v.v)})`
-			        )
-			      }))
-			    });
-			  }
-	  };
+  // 在所有对象绘制完成后，输出雷达报告
+  const radar = objectsStore.objects.find(obj => obj.typeName === 'Radar');
+  if (radar) {
+    const report = generateRadarReport(radar, objectsStore.objects);
+    if (report) {  // report 可能为 null
+      console.log('Radar Report:', {
+        // 雷达基本信息
+        id: report.id,
+        typeValue: report.typeValue,
+        typeName: report.typeName,
+        name: report.name,
+        mode: report.mode,
+        // 当前模式配置
+        config: {
+          height: report.config.height,
+          boundary: report.config.boundary
+        },
+        // 边界顶点
+        boundary: report.boundaryVertices,
+        // boundary内物体
+        objectsCount: report.objects.length,
+        objects: report.objects.map(obj => ({
+          id: obj.id,
+          type: obj.typeValue,
+          name: obj.name,
+          Vertices: obj.radarVertices?.map(v => 
+            `(h:${Math.round(v.h)}, v:${Math.round(v.v)})`
+          )
+        }))
+      });
+    }
+  }
+};
 
 
 </script>

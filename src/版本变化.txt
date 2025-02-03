@@ -13,6 +13,7 @@ SCSS (dart-sass)    预处理样式，提升 UI 设计灵活性
 
 src/
 ├── components/
+├── components/
 │   ├── common/              # 保留但目前为空
 │   ├── monitoring/          # 监控相关组件
 │   │   ├── PostureIndicator.vue  #人体姿态：
@@ -26,6 +27,7 @@ src/
 │   ├── objects.ts          #最初的各对像数据
 │   ├── radarData.ts        # 存放真实雷达传送过的多人的数据:坐标、姿态、生理指标等
 │   └── types.ts            #对象属性定义
+│
 └── utils/                 # 工具函数
 	├── drawRadar.ts       # 绘制雷达
 	├── radarUtils.ts       #计算雷达的边界，回传边界内的固定物体4点坐标，不传Wall
@@ -442,4 +444,10 @@ object.ts仍保持不变。
 		 */
 
 		 画布坐标：顺时针左上角开始，左上-右上-右下-左下
-         雷达坐标：v1:minH v2:minV V3：sec min H(H相同，取较小的V) v4:sec V
+         雷达坐标： v1：优先找最小的 h，若 h 相同则找最小的 v。
+					v2：优先找最小的 v，若 v 相同则找次小的 h。
+					v3：最小的 h 中次小的 v。
+					v4：剩下的那个点。
+
+###3.4
+	将房间布局导出单独隔离出来，

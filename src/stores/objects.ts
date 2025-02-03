@@ -1,7 +1,7 @@
 //src/stores/objects.ts
 import { defineStore } from "pinia";
-import type { ObjectProperties, Point } from "./types";
-import { generateRadarReport, type RadarReport } from '../utils/radarUtils';
+import type { ObjectProperties, Point,RadarReport } from "./types";
+import { generateRadarReport  } from '../utils/radarUtils';
 import type { Store } from 'pinia';
 
 // radarService need
@@ -127,12 +127,6 @@ export const useObjectsStore = defineStore("objects", {
   },
  }); 
 
-// 定义 store 的状态接口
-interface ObjectsState {
-  objects: ObjectProperties[];
-  selectedId: string | null;
-  copiedObject: ObjectProperties | null;
-  radarReport: RadarReport | null;
-}
+
 
 

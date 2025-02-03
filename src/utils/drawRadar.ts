@@ -40,7 +40,7 @@ function drawCoordinateLines(
   ctx.textAlign = "start";
   ctx.fillText("-H", 16 * scale, 4 * scale);
 
-  // V轴标记（只显示-V，+V由LED指示）
+  // ceiling:V轴标记（只显示-V，+V由LED指示）,wall:指示器在上方，V+在下方
   if (mode === 'ceiling') {
     ctx.fillText('-V', 2 * scale, -17 * scale)
 }
@@ -119,16 +119,16 @@ export function drawRadarBoundary(
   const bounds =
     mode === "ceiling"
       ? {
-          left: -boundary.leftH * scale,
+          left: -boundary.leftH * scale,    //使用的是画布坐标，H=-X
           right: boundary.rightH * scale,
-          top: boundary.frontV * scale,
-          bottom: -boundary.rearV * scale,
+          top: -boundary.rearV * scale,
+          bottom: boundary.frontV * scale,
         }
       : {
           left: -boundary.leftH * scale,
           right: boundary.rightH * scale,
-          top: -boundary.frontV * scale,
-          bottom: 0,
+          top: 0,
+          bottom: boundary.frontV * scale,
         };
 
   ctx.moveTo(bounds.left, bounds.top);

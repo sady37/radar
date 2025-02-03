@@ -11,7 +11,7 @@ export interface ObjectProperties {
 	typeName: string;     // 类型名称
 	id: string;
 	name: string;
-	position: Point; 
+	position: Point;     //中心点坐标
 	isLocked: boolean;
 
 	
@@ -103,27 +103,63 @@ export enum SleepState {
 
   
 // 修改相关接口
-interface RadarBoundaryVertices {
-	v1: RadarPoint;  // maxH+ maxV+
-	v2: RadarPoint;  // secH+ maxV+
-	v3: RadarPoint;  // maxV+,maxH+
-	v4: RadarPoint;  // secV+,secH+
+export interface RadarBoundaryVertices {
+	v1: RadarPoint;  // minH, minV
+	v2: RadarPoint;  // minV,sec min H
+	v3: RadarPoint;  // minH,sec minV
+	v4: RadarPoint;  // 
   }
 
   // 定义雷达坐标点接口
-interface RadarPoint {
-	h: number;  // 雷达坐标系中的水平位置
-	v: number;  // 雷达坐标系中的垂直位置
+export interface RadarPoint {
+		h: number;  // 雷达坐标系中的水平位置
+		v: number;  // 雷达坐标系中的垂直位置
   }
 
+
   export interface RadarReport {
-	radarId: string;
-	mode?: 'ceiling' | 'wall' | null;
-	boundaryVertices?: RadarBoundaryVertices;
+	// 雷达信息
+	typeValue: number;    // 类型值(1-Other, 2-bed等)
+	typeName: string;     // 类型名称
+	id: string;
+	name: string;
+	mode: 'ceiling' | 'wall';
+	// 根据当前模式只保留相应配置
+	config: {
+	  height: {
+		default: number;    // 当前高度
+		min: number;
+		max: number;
+		step: number;
+	  };
+	  boundary: {
+		leftH: number;
+		rightH: number;
+		frontV: number;
+		rearV: number;
+	  };
+	};
+	// 边界信息
+	boundaryVertices: {
+		v1: RadarPoint;  // minH, minV
+		v2: RadarPoint;  // minV,sec min H
+		v3: RadarPoint;  // minH,sec minV
+		v4: RadarPoint;  // 
+	};
+	// 边界内物体信息
 	objects: Array<{
-	  id: string;
-	  typeValue: number;
-	  canvasVertices?: Point[];     // 使用原有的Point接口
-	  radarVertices?: RadarPoint[]; // 使用新的RadarPoint接口
+		typeValue: number;    // 类型值(1-Other, 2-bed等)
+		typeName: string;     // 类型名称
+		id: string;
+		name: string;
+	  radarVertices: RadarPoint[];
 	}>;
-  }
+   }
+
+
+  export interface RoomLayout {
+	// 固定物体（除雷达外）
+	objects: ObjectProperties[];
+	// 雷达配置（可选）
+	radar?: ObjectProperties;
+  } 
