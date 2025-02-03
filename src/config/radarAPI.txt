@@ -1,0 +1,29 @@
+// 在组件中使用
+import { useObjectsStore } from '../stores/objects';
+import { RadarLayoutServiceImpl } from '../services/radarService';
+
+const store = useObjectsStore();
+const radarService = new RadarLayoutServiceImpl(store);
+
+// 使用服务的方法
+const report = radarService.getRadarReport();
+
+// 更新雷达设置
+radarService.updateRadarSettings({
+  mode: 'ceiling',
+  boundary: {
+    leftH: 300,
+    rightH: 300,
+    frontV: 200,
+    rearV: 200
+  },
+  height: 280
+});
+
+// 查询区域内物体
+const objects = radarService.getObjectsInArea({
+  x1: -100,
+  y1: -100,
+  x2: 100,
+  y2: 100
+});

@@ -2,6 +2,20 @@
 import { defineStore } from "pinia";
 import type { ObjectProperties, Point } from "./types";
 import { generateRadarReport, type RadarReport } from '../utils/radarUtils';
+import type { Store } from 'pinia';
+
+// radarService need
+// 定义 store 的状态接口
+interface ObjectsState {
+	objects: ObjectProperties[];
+	selectedId: string | null;
+	copiedObject: ObjectProperties | null;
+	radarReport: RadarReport | null;
+  }
+
+// 导出 store 类型
+export type ObjectsStore = ReturnType<typeof useObjectsStore>;
+//end  radarService
 
 export const useObjectsStore = defineStore("objects", {
   state: () => ({
@@ -112,3 +126,13 @@ export const useObjectsStore = defineStore("objects", {
 	},
   },
  }); 
+
+// 定义 store 的状态接口
+interface ObjectsState {
+  objects: ObjectProperties[];
+  selectedId: string | null;
+  copiedObject: ObjectProperties | null;
+  radarReport: RadarReport | null;
+}
+
+

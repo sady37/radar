@@ -34,7 +34,7 @@ import { useRadarDataStore } from '../stores/radarData'  // 添加
 import { drawRadarBoundary, drawRadarSymbol } from '../utils/drawRadar'
 import { drawPosture } from '../utils/drawPosture';
 //import { drawTrajectory } from '../utils/trajectoryUtils';
-
+import { generateRadarReport } from '../utils/radarUtils';
   
   // 2. 组件状态定义
   const canvasRef = ref<HTMLCanvasElement | null>(null)
@@ -646,6 +646,26 @@ import { drawPosture } from '../utils/drawPosture';
 	    objectsStore.objects
 	      .filter((obj) => obj.typeName=== "Radar")
 	      .forEach((obj) => drawObject(ctx, obj));
+		
+		 
+		  // 在所有对象绘制完成后，输出雷达报告
+		  const radar = objectsStore.objects.find(obj => obj.typeName === 'Radar');
+			  if (radar) {
+			    const report = generateRadarReport(radar, objectsStore.objects);
+			    console.log('Radar Report:', {
+			      radarId: report.radarId,
+			      mode: report.mode,
+			      boundary: report.boundaryVertices,
+			      objectsCount: report.objects.length,
+			      objects: report.objects.map(obj => ({
+			        id: obj.id,
+			        type: obj.typeValue,
+			        radarCoords: obj.radarVertices?.map(v => 
+			          `(H:${Math.round(v.h)}, V:${Math.round(v.v)})`
+			        )
+			      }))
+			    });
+			  }
 	  };
 
 

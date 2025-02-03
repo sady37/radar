@@ -99,3 +99,31 @@ export enum SleepState {
   DeepSleep = 2, // 深睡 10
   Awake = 3, // 清醒 11
 }
+
+
+  
+// 修改相关接口
+interface RadarBoundaryVertices {
+	v1: RadarPoint;  // maxH+ maxV+
+	v2: RadarPoint;  // secH+ maxV+
+	v3: RadarPoint;  // maxV+,maxH+
+	v4: RadarPoint;  // secV+,secH+
+  }
+
+  // 定义雷达坐标点接口
+interface RadarPoint {
+	h: number;  // 雷达坐标系中的水平位置
+	v: number;  // 雷达坐标系中的垂直位置
+  }
+
+  export interface RadarReport {
+	radarId: string;
+	mode?: 'ceiling' | 'wall' | null;
+	boundaryVertices?: RadarBoundaryVertices;
+	objects: Array<{
+	  id: string;
+	  typeValue: number;
+	  canvasVertices?: Point[];     // 使用原有的Point接口
+	  radarVertices?: RadarPoint[]; // 使用新的RadarPoint接口
+	}>;
+  }
