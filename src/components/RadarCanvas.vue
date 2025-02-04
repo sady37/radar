@@ -248,12 +248,17 @@ const handleCanvasClick = (event: MouseEvent) => {
     // 区分不同类型对象的检测范围
     if (obj.typeName === "Radar") {
       return Math.sqrt(dx * dx + dy * dy) <= 15;
-    } else {
-      const halfLength = obj.length / 2 + 5;
-      const halfWidth = obj.width / 2 + 5;
-      return Math.abs(dx) <= halfLength && Math.abs(dy) <= halfWidth;
-    }
-  });
+    } else if (obj.typeName === "Wall") {
+	 // Wall 使用较大的检测范围
+	 const halfLength = obj.length / 2 + 15;  // 增加到15
+	 const halfWidth = obj.width / 2 + 15;    // 增加到15
+	 return Math.abs(dx) <= halfLength && Math.abs(dy) <= halfWidth;
+	}	else {
+	      const halfLength = obj.length / 2 + 5;
+	      const halfWidth = obj.width / 2 + 5;
+	      return Math.abs(dx) <= halfLength && Math.abs(dy) <= halfWidth;
+	    }
+	  });
 
   objectsStore.selectObject(clickedObject?.id || null);
 };

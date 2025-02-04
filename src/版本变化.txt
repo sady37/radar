@@ -458,3 +458,5 @@ object.ts仍保持不变。
 		-> store.selectedId 变为 null 
 		-> 触发 Toolbar 的 watch 
 		-> 重置 Toolbar UI状态
+###3.4.1
+   解决wall rotate 90， 不易选取
