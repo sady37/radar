@@ -24,7 +24,7 @@ export interface ObjectProperties {
   // 按模式分组的属性
   ceiling: {
     height: {
-      min: number;   // 150
+      min: number;   // 0
       max: number;   // 330
       default: number; // 280
       step: number;  // 10
@@ -38,8 +38,8 @@ export interface ObjectProperties {
   };
   wall: {
     height: {
-      min: number;   // 150
-      max: number;   // 330
+      min: number;   // 0
+      max: number;   // 180
       default: number; // 150
       step: number;  // 10
     };

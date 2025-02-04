@@ -32,27 +32,22 @@
 
       <div class="action-buttons">
 		<button class="action-btn create-btn" @click="createObject" :disabled="editMode !== 'template'">Create</button>
-  		<button class="action-btn set-btn" @click="updateObject" :disabled="editMode !== 'object'">Set</button>
+  		<!--<button class="action-btn set-btn" @click="updateObject" :disabled="editMode !== 'object'">Set</button> -->
   		<button class="action-btn delete-btn" @click="deleteObject" :disabled="editMode !== 'object'">Delete</button>
-      </div>
-	  <!-- 新增 layout 按钮行 -->
-	 <div class="layout-buttons">
-		<button class="layout-btn" @click="saveRoomLayout">ExR</button>
-  		<button class="layout-btn" @click="loadRoomLayout">ImR</button>
-		<button class="layout-btn" @click="saveRadarConfig">ExD</button>
-		<button class="layout-btn" @click="loadRadarConfig">ImD</button>
-	 </div> 
+		<!-- 新增 layout 按钮行 -->
+		<button class="layout-btn" @click="saveRoomLayout">SaveRm</button>
+  		<button class="layout-btn" @click="loadRoomLayout">LoadRm</button>
+		<button class="layout-btn" @click="saveRadarConfig">SaveRd</button>
+		<button class="layout-btn" @click="loadRadarConfig">LoadRd</button> 
+	 </div>
     </div>
 
     <!-- 对象属性区 -->
 	<div class="property-area">
 	    <div class="name-row">
-	        <input
-	            type="text"
-	            v-model="objectName"
-	            placeholder="Name"
-	            class="name-input"
-	        />
+			<span>Name:</span>
+	        <input type="text" v-model="objectName" placeholder="Name" class="name-input"  />
+			<!-- <button class="layout-btn" @click="loadRadarConfig">LoadRd</button>  -->
 	    </div>
 
 	    <div
@@ -62,17 +57,25 @@
 	        <div class="input-group">
 	            <span>L:</span>
 	            <input
-	                type="number"
-	                v-model="properties.length"
-	                @change="validateLengthInput"
+				  type="number"
+				  v-model.number="properties.length"
+				  min="10"
+				  max="700"
+				  step="10"
+				  @change="validateLength"
+				  @blur="validateLength"
 	            />
 	        </div>
 	        <div class="input-group">
 	            <span>W:</span>
 	            <input
-	                type="number"
-	                v-model="properties.width"
-	                @change="validateWidthInput"
+				  type="number"
+				  v-model.number="properties.width"
+				  min="10"
+				  max="700"
+				  step="10"
+				  @change="validateWidth"
+				  @blur="validateWidth"
 	            />
 	        </div>
 	    </div>
@@ -95,9 +98,13 @@
 	            <div class="input-group">
 	                <span>H:</span>
 	                <input
-	                    type="number"
-	                    v-model.number="currentModeConfig.height.default"
-	                    @change="validateHeightInput"
+						  type="number"
+						  v-model.number="currentModeConfig.height.default"
+						  min="0"
+						  max="330"
+						  step="10"
+						  @change="validateHeight"
+						  @blur="validateHeight"
 	                />
 	                <span class="accuracy">150~330cm</span>
 	            </div>
@@ -283,7 +290,7 @@ import { ref, reactive, watch, computed } from "vue";
 import { useObjectsStore } from "../stores/objects";
 import { useMouseStore } from "../stores/mouse";
 import { useCanvasStore } from "../stores/canvas";
-import type { ObjectProperties, Point,RoomLayout } from "../stores/types";
+import type { ObjectProperties, RoomLayout } from "../stores/types";
 
 
 
@@ -310,8 +317,6 @@ const objectTypes = [
 
 const selectedType = ref("");
 const objectName = ref("");
-const position = reactive({ x: 0, y: 0 });
-const rotation = ref(0);
 const isLocked = ref(false);
 const hasSelectedObject = ref(false);
 // 状态控制
@@ -374,33 +379,41 @@ const currentModeConfig = computed(() =>
   properties[properties.mode as "ceiling" | "wall"]
 );
 
-const validateLengthInput = () => {
-  properties.length = validateLength(properties.length);
-};
-const validateWidthInput = () => {
-  properties.width = validateWidth(properties.width);
-};
 
-const validateHeightInput = () => {
-  const currentMode = properties.mode;
-  const value = currentModeConfig.value.height.default;
-  currentModeConfig.value.height.default = validateHeight(value);
-
+// 修改 validateLength 和 validateWidth
+const validateLength = () => {
+  const validatedLength = Math.min(700, Math.max(10, Math.round(properties.length / 10) * 10));
+  if (objectsStore.selectedId) {
+    objectsStore.updateObject(objectsStore.selectedId, {
+      ...objectsStore.selectedObject,
+      length: validatedLength
+    });
+  }
 };
 
-const validateLength = (value: number): number => {
-  return Math.min(700, Math.max(10, Math.round(value / 10) * 10));
+const validateWidth = () => {
+  const validatedWidth = Math.min(700, Math.max(10, Math.round(properties.width / 10) * 10));
+  if (objectsStore.selectedId) {
+    objectsStore.updateObject(objectsStore.selectedId, {
+      ...objectsStore.selectedObject,
+      width: validatedWidth
+    });
+  }
 };
 
-const validateWidth = (value: number): number => {
-  return Math.min(700, Math.max(10, Math.round(value / 10) * 10));
-};
+const validateHeight = () => {
+  const currentMode = properties.mode || 'ceiling';
+  const heightConfig = currentMode === 'ceiling' ? 
+    properties.ceiling.height : 
+    properties.wall.height;
 
-const validateHeight = (value: number): number => {
-  const currentMode = properties.mode;
-  const heightLimits = currentModeConfig.value.height;
-  return Math.min(heightLimits.max,
-    Math.max(heightLimits.min, Math.round(value / heightLimits.step) * heightLimits.step));
+  heightConfig.default = Math.min(
+    heightConfig.max,
+    Math.max(
+      heightConfig.min,
+      Math.round(heightConfig.default / heightConfig.step) * heightConfig.step
+    )
+  );
 };
 
 const validateBoundary = () => {
@@ -419,7 +432,7 @@ const validateBoundary = () => {
   }
 };
 
-
+//4. 监听 canvasStore 的 selectedId 变化，同步到 UI
 watch(
  () => objectsStore.selectedId,
  (newId) => {
@@ -456,10 +469,28 @@ watch(
        properties.isMonitored = obj.isMonitored || false;
        properties.borderOnly = obj.borderOnly || false;
      }
-   } 
- }
+   }else {
+      // 由 Canvas 点击空白处触发的取消选中，在这里处理 UI 重置
+      editMode.value =  null; //"template";
+      selectedType.value = "";
+      objectName.value = "";
+      isLocked.value = false;
+    }
+  }
 );
 
+/* 使用watch 单独监听属性变化，同步到选中对象的属性
+//监听objectName.value的变化，同步到选中对象的name属性
+watch(objectName, (newName) => {
+  if (objectsStore.selectedId) {
+    objectsStore.updateObject(objectsStore.selectedId, {
+      ...objectsStore.selectedObject,
+      name: newName
+    });
+  }
+});
+
+//监听isLocked.value的变化，同步到选中对象的isLocked属性
 watch(  () => isLocked.value,  (newValue) => {
     if (objectsStore.selectedId) {
       const obj = objectsStore.objects.find((o) => o.id === objectsStore.selectedId);
@@ -472,6 +503,156 @@ watch(  () => isLocked.value,  (newValue) => {
     }
   },
 );
+
+
+
+//监听radar model的变化，同步到选中对象的mode属性
+watch(
+  () => properties.mode,
+  (newMode) => {
+    if (objectsStore.selectedId) {
+      const obj = objectsStore.objects.find((o) => o.id === objectsStore.selectedId);
+      if (obj && obj.typeName === 'Radar') {
+        objectsStore.updateObject(objectsStore.selectedId, {
+          ...obj,
+          mode: newMode,
+        });
+      }
+    }
+  }
+);
+
+watch(
+  () => properties.showBoundary,
+  (newValue) => {
+    if (objectsStore.selectedId) {
+      const obj = objectsStore.objects.find((o) => o.id === objectsStore.selectedId);
+      if (obj && obj.typeName === 'Radar') {
+        objectsStore.updateObject(objectsStore.selectedId, {
+          ...obj,
+          showBoundary: newValue,
+        });
+      }
+    }
+  }
+);
+
+watch(
+  () => properties.showSignal,
+  (newValue) => {
+    if (objectsStore.selectedId) {
+      const obj = objectsStore.objects.find((o) => o.id === objectsStore.selectedId);
+      if (obj && obj.typeName === 'Radar') {
+        objectsStore.updateObject(objectsStore.selectedId, {
+          ...obj,
+          showSignal: newValue,
+        });
+      }
+    }
+  }
+);
+
+
+watch(
+  () => properties.isMonitored,
+  (newValue) => {
+    if (objectsStore.selectedId) {
+      const obj = objectsStore.objects.find((o) => o.id === objectsStore.selectedId);
+      if (obj && obj.typeName === 'Bed') {
+        objectsStore.updateObject(objectsStore.selectedId, {
+          ...obj,
+          isMonitored: newValue,
+        });
+      }
+    }
+  }
+);
+
+
+//监听properties.borderOnly的变化，同步到选中对象的borderOnly属性
+watch(
+  () => properties.borderOnly,
+  (newValue) => {
+    if (objectsStore.selectedId) {
+      const obj = objectsStore.objects.find((o) => o.id === objectsStore.selectedId);
+      if (obj && obj.typeName === 'Other') {
+        objectsStore.updateObject(objectsStore.selectedId, {
+          ...obj,
+          borderOnly: newValue,
+        });
+      }
+    }
+  }
+);
+*/
+
+// 监听Name、isLocked、mode、borderOnly、isMonitored,showBoundary,showSignal的变化，同步到选中对象的属性
+watch(
+  [
+    objectName,
+    () => isLocked.value,
+    () => properties.mode,
+    () => properties.borderOnly,
+    () => properties.isMonitored,
+    () => properties.showBoundary,
+    () => properties.showSignal
+  ],
+  ([newName, newIsLocked, newMode, newBorderOnly, newIsMonitored, newShowBoundary, newShowSignal]) => {
+    if (objectsStore.selectedId) {
+      const obj = objectsStore.objects.find((o) => o.id === objectsStore.selectedId);
+      if (obj) {
+        const updates: Partial<ObjectProperties> = {};
+
+        // 处理 name 变化
+        if (newName !== undefined) {
+          updates.name = newName;
+        }
+
+        // 处理 isLocked 变化
+        if (newIsLocked !== undefined) {
+          updates.isLocked = newIsLocked;
+        }
+
+        // 处理 mode 变化
+        if (newMode !== undefined && obj.typeName === 'Radar') {
+          updates.mode = newMode;
+        }
+
+        // 处理 borderOnly 变化
+        if (newBorderOnly !== undefined) {
+          updates.borderOnly = newBorderOnly;
+        }
+
+        // 处理 isMonitored 变化
+        if (newIsMonitored !== undefined) {
+          updates.isMonitored = newIsMonitored;
+        }
+
+        // 处理 showBoundary 变化
+        if (newShowBoundary !== undefined && obj.typeName === 'Radar') {
+          updates.showBoundary = newShowBoundary;
+        }
+
+        // 处理 showSignal 变化
+        if (newShowSignal !== undefined && obj.typeName === 'Radar') {
+          updates.showSignal = newShowSignal;
+        }
+
+        // 有更新则调用 updateObject
+        if (Object.keys(updates).length > 0) {
+          objectsStore.updateObject(objectsStore.selectedId, {
+            ...obj,
+            ...updates
+          });
+        }
+      }
+    }
+  }
+);
+
+
+
+
 
 
 // 5. 函数定义 (确保每个函数只定义一次)
@@ -520,39 +701,6 @@ const selectObjectType = (typeName: string) => {
   }
 };
 
-/*多余的，setButton只用 updateObject()
-const handleSetButton = () => {
-  const objectData: Omit<ObjectProperties, "id"> = {
-    typeValue: objectTypes.find(t => t.typeName === selectedType.value)?.typeValue || 0,
-    typeName: selectedType.value,
-    name: objectName.value || selectedType.value,
-    position: {
-      x: objectsStore.selectedId ? properties.position.x : 0,
-      y: objectsStore.selectedId ? properties.position.y : 0,
-    },
-    length: properties.length,
-    width: properties.width,
-    rotation: properties.rotation,
-    isLocked: properties.isLocked,
-    mode: properties.mode,
-    ceiling: properties.ceiling,   // 直接使用具体的模式数据
-    wall: properties.wall,         // 直接使用具体的模式数据
-    showBoundary: properties.showBoundary,
-    showSignal: properties.showSignal,
-    isMonitored: properties.isMonitored,
-    borderOnly: properties.borderOnly,
-  };
-
-  if (objectsStore.selectedId) {
-    objectsStore.updateObject(objectsStore.selectedId, objectData);
-  } else {
-    const id = objectsStore.createObject(objectData);
-    objectsStore.selectObject(null);
-  }
-  selectedType.value = "";
-  //console.log("After update/create:", objectsStore.objects);
-};
-*/
 
 const createObject = () => {
   const selectedObj = objectTypes.find((t) => t.typeName === selectedType.value);
@@ -577,7 +725,7 @@ const createObject = () => {
 	  borderOnly: properties.borderOnly,
   };
 
-  const id = objectsStore.createObject(objectData);
+  objectsStore.createObject(objectData);
   
     // 重置 toolbar 区的属性值
 	  selectedType.value = "";
@@ -902,6 +1050,7 @@ const loadRadarConfig = () => {
           }
         }
 
+		/* 删除set键
         &.set-btn {
           background: #ccc; // 默认灰色
           color: white;
@@ -918,6 +1067,7 @@ const loadRadarConfig = () => {
             cursor: not-allowed;
           }
         }
+		*/
 
         &.delete-btn {
           background: #ff4d4f;
@@ -931,42 +1081,29 @@ const loadRadarConfig = () => {
           background: #ccc;
           cursor: not-allowed;
         }
+
       }
+
+	  .layout-btn {
+        height: 28px;
+        border: 1px solid #ccc;
+        border-radius: 2px;
+        font-size: 12px;
+        cursor: pointer;
+		//background: #d5e7f7;
+		&:hover {
+		  background: #b3d7f5;
+		}
+	  }
     }
-
-	.layout-buttons {
-	 display: grid;
-	 grid-template-columns: repeat(4, 1fr);  // 4个按钮等宽
-	 gap: 4px;
-	 margin-top: 6px;
-
-	 .layout-btn {
-	   height: 24px;
-	   border: 1px solid #ccc;
-	   border-radius: 2px;
-	   font-size: 11px;  // 缩小字号以适应按钮宽度
-	   padding: 0 2px;   // 减小内边距
-	   cursor: pointer;
-	   background: white;
-	   white-space: nowrap;  // 文字不换行
-	   overflow: hidden;     // 超出隐藏
-	   text-overflow: ellipsis; // 超出显示...
-	   
-	   &:hover {
-	     background: #f0f0f0;
-	   }
-	 }
-	}
   }
-
-
 
 .property-area {
   background: #f9f9f9; // 设置背景颜色为浅灰色
-  //padding: 6px 2px 1px; // 增加内边距，上6,左2，右1
-  padding-top: 6;  //只设上边距
+  //padding: 10px 12px; // 增加内边距，上下10,左右12
+  padding-top: 10;  //只设上边距
   border-radius: 4px; // 设置圆角边框，半径为4px
-  margin-top: 1px; // 增加与template区的间距，顶部间距为1px
+  margin-top: 6px; // 增加与template区的间距，顶部间距为1px
   margin-bottom: 120px; // 减少底部空间，底部间距为120px
 
   // 增加各部分间距，选择.property-area的直接子元素div
@@ -974,17 +1111,74 @@ const loadRadarConfig = () => {
     margin-bottom: 10px; // 增加各部分之间的间距为10px
   }
 
+ 
+  .name-row {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  padding-right: 6px;  // 添加右边距，确保不会贴着边界
+  margin-bottom: 8px;
+
+  span {
+    font-size: 12px;
+    color: #666;
+    min-width: 40px;  // 与其他标签宽度保持一致
+  }
+
+  .name-input {
+    width: 110px;
+    height: 24px;  // 与按钮高度保持一致
+    padding: 0 6px;
+    font-size: 12px;
+    border: 1px solid #ccc;
+    border-radius: 2px;
+    box-sizing: border-box;
+
+    &:focus {
+      outline: none;
+      border-color: #1890ff;
+    }
+
+    &::placeholder {
+      color: #ccc;
+    }
+  }
+}
+
+  /*
   .name-row {
     margin-bottom: 8px; // 增加底部间距为8px
+	
+	span {
+          font-size: 12px; // 字体大小为12px
+          color: #666; // 文字颜色为灰色
+        }
 
     .name-input {
-      width: 100%; // 输入框宽度占满父容器
+      width:  100px ;//100%; // 输入框宽度占满父容器
       padding: 4px; // 输入框内边距为4px
       font-size: 12px; // 输入框字体大小为12px
       border: 1px solid #ccc; // 输入框边框为1px的灰色实线
       border-radius: 2px; // 输入框圆角边框，半径为2px
+      margin-right: 6px; // 增加右边距为2px
     }
+
+ 	 删除set键，layout 上移至action-buttons
+		.layout-btn {
+		width:49px;
+        height: 23px;
+		border: 1px solid #ccc;
+        border-radius: 2px;
+		//margin-right: 2px;
+        font-size: 12px;
+        cursor: pointer;
+		//background: #d5e7f7;
+		&:hover {
+			background: #b3d7f5;
+		}
+  	} 
   }
+  */
 
   .size-row {
     display: flex; // 使用flex布局
@@ -1001,7 +1195,7 @@ const loadRadarConfig = () => {
       }
 
       input {
-        width: 45px; // 输入框宽度为50px
+        width: 50px; // 输入框宽度为50px
         padding: 2px 4px; // 输入框内边距上下2px，左右4px
         text-align: right; // 输入框文本右对齐
         font-size: 12px; // 输入框字体大小为12px
@@ -1050,7 +1244,7 @@ const loadRadarConfig = () => {
         }
 
         input {
-          width: 45px; // 输入框宽度为45px
+          width: 50px; // 输入框宽度为45px
           padding: 2px 4px; // 输入框内边距上下2px，左右4px
           text-align: right; // 输入框文本右对齐
           font-size: 12px; // 输入框字体大小为12px
@@ -1077,7 +1271,7 @@ const loadRadarConfig = () => {
         .input-group {
           flex: 1; // 弹性伸缩，占满剩余空间
           input {
-            width: 45px; // 输入框宽度为45px
+            width: 50px; // 输入框宽度为45px
             padding: 2px 4px; // 输入框内边距上下2px，左右4px
             text-align: right; // 输入框文本右对齐
             font-size: 12px; // 输入框字体大小为12px
@@ -1114,6 +1308,7 @@ const loadRadarConfig = () => {
     }
   }
 }
+
   .control-area {
     position: absolute;
     bottom: 2px; // 缩短10px
@@ -1244,5 +1439,7 @@ input[type="number"] {
     margin: 0;
   }
 }
+
+
 
 </style>

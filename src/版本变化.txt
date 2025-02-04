@@ -450,4 +450,11 @@ object.ts仍保持不变。
 					v4：剩下的那个点。
 
 ###3.4
-	将房间布局导出单独隔离出来，
+	将房间布局导出单独隔离出来，增加房间/雷达的导入/出按钮
+	去掉Set,直接修改并保存生效，所见即所得,使用watch()
+	解决一些bug: 点击画布空白处，取消选中对象，但toolbar没有取消
+			Canvas点击空白处 
+		-> objectsStore.selectObject(null) 
+		-> store.selectedId 变为 null 
+		-> 触发 Toolbar 的 watch 
+		-> 重置 Toolbar UI状态
