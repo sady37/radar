@@ -64,3 +64,20 @@ src/
 	 点击create键：createObject创建对像后，取消所有选中，重置对像属性为默认值，同时更新ObjectName输入框和isLocked开关
 	 点击set键, 设置对像值，取消对像及模板选中
   解决canvas对像传递到toolbar,toolbar watch(selectedId),同步属性及ObjectNmae框及isLocked开关
+
+20250202  V3.3	
+	保留现有的画布坐标计算（用于布局）
+	添加雷达坐标系转换函数
+	确保顶点顺序符合雷达标准
+	实现完整的双坐标系报告(方便后期替换雷达)
+
+20250204  v3.4
+###3.4
+	将房间布局导出单独隔离出来，增加房间/雷达的导入/出按钮
+	去掉Set,直接修改并保存生效，所见即所得,使用watch()
+	解决一些bug: 点击画布空白处，取消选中对象，但toolbar没有取消
+			Canvas点击空白处 
+		-> objectsStore.selectObject(null) 
+		-> store.selectedId 变为 null 
+		-> 触发 Toolbar 的 watch 
+		-> 重置 Toolbar UI状态
