@@ -34,20 +34,19 @@
 		<button class="action-btn create-btn" @click="createObject" :disabled="editMode !== 'template'">Create</button>
   		<!--<button class="action-btn set-btn" @click="updateObject" :disabled="editMode !== 'object'">Set</button> -->
   		<button class="action-btn delete-btn" @click="deleteObject" :disabled="editMode !== 'object'">Delete</button>
-		<!-- 新增 layout 按钮行 -->
-		<button class="layout-btn loadRoom-btn" @click="loadRoomLayout">LoadRm</button>
-		<button class="layout-btn loadRadar-btn" @click="loadRadarConfig">LoadRd</button>
-		<button class="layout-btn saveRadar-btn" @click="saveRadarConfig">SaveRd</button>
-		<button class="layout-btn saveRoom-btn" @click="saveRoomLayout">SaveRm</button>
+		<button class="action-btn test-btn" :class="{ 'active': isTesting }" @click="toggleTest">Test</button> 
+		<!-- 新增 import/export 按钮行 -->
+		<button class="layout-btn saveRoom-btn" @click="saveRoom">saveRm</button>
+    	<button class="layout-btn loadRoom-btn" type="button" @click="loadRoom($event)">loadRm</button>
 	 </div>
     </div>
 
     <!-- 对象属性区 -->
 	<div class="property-area">
 	    <div class="name-row">
-			<span></span>
+			<span>Name</span>
 	        <input type="text" v-model="objectName" placeholder="Name" class="name-input"  />
-			<button class="test-btn" :class="{ 'active': isTesting }" @click="toggleTest">Test</button>
+			<!-- <button class="test-btn" :class="{ 'active': isTesting }" @click="toggleTest">Test</button> -->
 	    </div>
 
 	    <div
@@ -752,104 +751,47 @@ const displayPosition = computed(() => {
 });
 
 //房间布局及radar导入导出
-// 导出功能
-const saveRoomLayout = () => {
-  const layout: RoomLayout = {
-    objects: objectsStore.objects.filter(obj => obj.typeName !== 'Radar')
-  };
+interface SavedRoom {
+  objects: ObjectProperties[];  // 包含所有固定物体（包括雷达）
+}
 
-  const blob = new Blob([JSON.stringify(layout, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'room_layout.json';
-  a.click();
-  URL.revokeObjectURL(url);
+// 保存按钮处理函数
+const saveRoom = () => {
+ const data = JSON.stringify({ objects: objectsStore.objects });
+ const blob = new Blob([data], { type: 'application/json' });
+ const url = URL.createObjectURL(blob);
+ const a = document.createElement('a');
+ a.href = url;
+ a.download = 'room_layout.json';
+ a.click();
+ URL.revokeObjectURL(url);
 };
 
-const saveRadarConfig = () => {
-  // 获取所有雷达配置
-  const radars = objectsStore.objects
-    .filter(obj => obj.typeName === 'Radar')
-    .map(radar => ({
-      typeValue: radar.typeValue,
-      typeName: radar.typeName,
-      name: radar.name,
-      position: radar.position,
-      rotation: radar.rotation,
-      mode: radar.mode,
-      ceiling: radar.ceiling,
-      wall: radar.wall,
-      isLocked: radar.isLocked
-    }));
-
-  if (radars.length > 0) {
-    radars.forEach(radar => {
-      const blob = new Blob([JSON.stringify(radar, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      // 使用雷达名称作为文件名
-      a.download = `${radar.name}_config.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-    });
-  }
+// 加载按钮处理函数 
+const loadRoom = (event: MouseEvent) => {
+ const input = document.createElement('input');
+ input.type = 'file';
+ input.accept = '.json';
+ input.onchange = async (e: Event) => {
+   const file = (e.target as HTMLInputElement).files?.[0];
+   if (file) {
+     const text = await file.text();
+     try {
+       objectsStore.objects = [];  // 清空现有对象
+       const room = JSON.parse(text) as SavedRoom;
+       room.objects.forEach(obj => {
+         const { id: _, ...objWithoutId } = obj;
+		 const newId = `${obj.typeName}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+         objectsStore.createObject(objWithoutId);
+       });
+     } catch(error) {
+       console.error('Failed to load room:', error);
+     }
+   }
+ };
+ input.click();
 };
 
-// 导入功能
-const loadRoomLayout = () => {
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.accept = '.json';
-  input.onchange = async (e: Event) => {
-    const file = (e.target as HTMLInputElement).files?.[0];
-    if (file) {
-      const text = await file.text();
-      const layout: RoomLayout = JSON.parse(text);
-      
-      // 保留现有雷达
-      const radars = objectsStore.objects.filter(obj => obj.typeName === 'Radar');
-      // 清除非雷达对象
-      objectsStore.objects = radars;
-      // 加载新的固定物体
-      layout.objects.forEach(obj => {
-        objectsStore.createObject(obj);
-      });
-    }
-  };
-  input.click();
-};
-
-const loadRadarConfig = () => {
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.multiple = true;  // 允许选择多个文件
-  input.accept = '.json';
-  input.onchange = async (e: Event) => {
-    const files = (e.target as HTMLInputElement).files;
-    if (files) {
-      for (let i = 0; i < files.length; i++) {
-        const text = await files[i].text();
-        const radarConfig = JSON.parse(text);
-        if (radarConfig.typeName === 'Radar') {
-          // 检查是否已存在同名雷达
-          const existingRadar = objectsStore.objects.find(
-            obj => obj.typeName === 'Radar' && obj.name === radarConfig.name
-          );
-          if (existingRadar) {
-            // 更新现有雷达配置
-            objectsStore.updateObject(existingRadar.id, radarConfig);
-          } else {
-            // 创建新雷达
-            objectsStore.createObject(radarConfig);
-          }
-        }
-      }
-    }
-  };
-  input.click();
-};
 
 
 </script>
@@ -884,7 +826,7 @@ const loadRadarConfig = () => {
           background: #a0eda0;
         }
         &.bed {
-          background: #add8e6;
+          background: #F5F5DC;  //RGB: (245, 245, 220)
         }
         &.exclude {
           background: #EFFFA2; // rgb(240, 230, 140)
@@ -989,6 +931,8 @@ const loadRadarConfig = () => {
           background: #ccc;
           cursor: not-allowed;
         }
+		&.test-btn {
+			background: #e6eff8;}
 
       }
 
@@ -999,13 +943,9 @@ const loadRadarConfig = () => {
         font-size: 12px;
         cursor: pointer;
 		//background: #d5e7f7;
-		&.loadRoom-btn {
-			background: #f9f1f1;}
-		&.loadRadar-btn {
-			background: #e6eff8;}
-		&.saveRadar-btn {
-			background: #e6eff8;}
 		&.saveRoom-btn {
+			background: #f9f1f1;}
+		&.loadRoom-btn {
 			background: #f9f1f1;}
 		&:hover {
 		  background: #a5cff2;

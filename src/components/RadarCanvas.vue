@@ -445,7 +445,7 @@ const drawObject = (ctx: CanvasRenderingContext2D, obj: ObjectProperties) => {
         obj.length * scale.value,
         obj.width * scale.value
       );
-      ctx.fillStyle = obj.isMonitored ? "rgb(240, 230, 140)" : "rgb(173, 216, 230)";
+      ctx.fillStyle = obj.isMonitored ? "rgb(240, 230, 140)" : "rgb(245, 245, 220)";  //RGB: (245, 245, 220)  HEX: #F5F5DC old"rgb(173, 216, 230)
       ctx.fill();
       ctx.strokeStyle = "rgb(102, 102, 102)";
       ctx.stroke();
@@ -453,7 +453,7 @@ const drawObject = (ctx: CanvasRenderingContext2D, obj: ObjectProperties) => {
       ctx.font = `${12 * scale.value}px Arial`;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.fillText(obj.name, obj.length/2,(obj.width/2+10) ); // 在对象外侧绘制名称
+      ctx.fillText(obj.name, 0,(obj.width/2-5) ); // 在对象
 	  break;
 	 
     case "Exclude":
@@ -484,6 +484,11 @@ const drawObject = (ctx: CanvasRenderingContext2D, obj: ObjectProperties) => {
       }
       ctx.strokeStyle = "rgb(102, 102, 102)";
       ctx.stroke();
+	  ctx.fillStyle = "rgb(0, 0, 0)";
+      ctx.font = `${12 * scale.value}px Arial`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(obj.name, 0,0) ; 
       break;
 
     case "Wall":

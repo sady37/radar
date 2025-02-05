@@ -57,7 +57,7 @@ export const useObjectsStore = defineStore("objects", {
 	},
  
 	createObject(data: Omit<ObjectProperties, "id">) {
-	  const id = Date.now().toString();
+	    const id = `${data.typeName}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 	  this.objects.push({ ...data, id });
 	  // 如果创建的是雷达或fixed物体，重新计算report
 	  if (data.typeName === 'Radar' || 
