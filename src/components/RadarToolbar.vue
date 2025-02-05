@@ -319,7 +319,7 @@ const toggleTest = () => {
 // 4. 状态定义
 
 const objectTypes = [
-  {typeValue:2,typeName: "Bed", label: "Bed", defaultLength: 190, defaultWidth: 90 },
+  {typeValue:2,typeName: "Bed", label: "Bed", defaultLength: 190, defaultWidth: 140 }, //twin:190*90,full:190*140, queen:200*150, 
   {typeValue:3,typeName: "Exclude", label: "Exclude", defaultLength: 50, defaultWidth: 50 },
   {typeValue:4,typeName: "Door", label: "Door", defaultLength: 90, defaultWidth: 30 },
   {typeValue:1,typeName: "Other", label: "Other", defaultLength: 50, defaultWidth: 50 },

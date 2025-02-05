@@ -577,21 +577,27 @@ const drawStatusPanel = (ctx: CanvasRenderingContext2D) => {
   ctx.fillRect(10, 10, 200, 80);
 
   // 统一图标加载函数
-  const drawIcon = (iconConfig: PostureIconConfig, x: number, y: number, value: string) => {
+  const drawIconAndText = (
+    iconConfig: PostureIconConfig, 
+    x: number, 
+    y: number, 
+    value: string
+  ) => {
     const icon = new Image();
     icon.src = iconConfig.iconPath;
     icon.onload = () => {
       ctx.drawImage(icon, x, y, iconConfig.size, iconConfig.size);
+      // 在图标加载完成后绘制文字
       ctx.font = '14px Arial';
       ctx.fillStyle = '#333';
       ctx.textAlign = 'left';
-      //ctx.fillText(value, x + iconConfig.size + 5, y + iconConfig.size/2 + 5);
+      ctx.fillText(value, x + iconConfig.size + 5, y + iconConfig.size/2 + 5);
     };
   };
 
   // 心率
   const heartStatus = getHeartRateStatus(vital?.heartRate);
-  drawIcon(
+  drawIconAndText(
     VITAL_SIGN_CONFIGS.heart[heartStatus], 
     20, 15,
     vital?.heartRate ? `${vital.heartRate} ` : '--'
@@ -599,7 +605,7 @@ const drawStatusPanel = (ctx: CanvasRenderingContext2D) => {
 
   // 呼吸
   const breathingStatus = getBreathingStatus(vital?.breathing);
-  drawIcon(
+  drawIconAndText(
     VITAL_SIGN_CONFIGS.breathing[breathingStatus], 
     20, 45,
     vital?.breathing ? `${vital.breathing}  ` : '--'
@@ -608,7 +614,7 @@ const drawStatusPanel = (ctx: CanvasRenderingContext2D) => {
   // 睡眠状态
   // 睡眠状态
   const sleepStatus = getSleepStatus(vital?.sleepState);
-  drawIcon(
+  drawIconAndText(
     VITAL_SIGN_CONFIGS.sleep[sleepStatus], 
     20, 75,
     vital?.sleepState ? sleepStatus.toUpperCase() : '--'

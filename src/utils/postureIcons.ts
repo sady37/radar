@@ -33,84 +33,84 @@ export const POSTURE_CONFIGS: Record<number, PostureIconConfig> = {
 	  // Init
 	  type: "svg",
 	  iconPath: iconMap["Init"],
-	  size: 43,
+	  size: 50,
 	  showLabel: false,
 	},
 	1: {
 	  // Walking
 	  type: "svg",
 	  iconPath: iconMap["Walking"],
-	  size: 43,
+	  size: 50,
 	  showLabel: false,
 	},
 	2: {
 	  // FallSuspect
 	  type: "svg",
 	  iconPath: iconMap["FallSuspect"],
-	  size: 43,
+	  size: 50,
 	  showLabel: false,
 	},
 	3: {
 	  // Sitting
 	  type: "svg",
 	  iconPath: iconMap["Sitting"],
-	  size: 43,
+	  size: 50,
 	  showLabel: false,
 	},
 	4: {
 	  // Standing
 	  type: "svg",
 	  iconPath: iconMap["Standing"],
-	  size: 43,
+	  size: 50,
 	  showLabel: false,
 	},
 	5: {
 	  // FallConfirm
 	  type: "svg",
 	  iconPath: iconMap["FallConfirm"],
-	  size: 43,
+	  size: 50,
 	  showLabel: false,
 	},
 	6: {
 	  // Lying
 	  type: "svg",
-	  iconPath: iconMap["LyingBed"],
-	  size: 43,
+	  iconPath: iconMap["LyingBed-back"],
+	  size: 50,
 	  showLabel: false,
 	},
 	7: {
 	  // SitGroundSuspect
 	  type: "svg",
 	  iconPath: iconMap["SitGroundSuspect"],
-	  size: 43,
+	  size: 50,
 	  showLabel: false,
 	},
 	8: {
 	  // SitGroundConfirm
 	  type: "svg",
 	  iconPath: iconMap["SitGroundConfirm"],
-	  size: 43,
+	  size: 50,
 	  showLabel: false,
 	},
 	9: {
 	  // SitUpBed
 	  type: "svg",
 	  iconPath: iconMap["SitUpBed"],
-	  size: 43,
+	  size: 50,
 	  showLabel: false,
 	},
 	10: {
 	  // SitUpBedSuspect
 	  type: "svg",
 	  iconPath: iconMap["SitUpBedSuspect"],
-	  size: 43,
+	  size: 50,
 	  showLabel: false,
 	},
 	11: {
 	  // SitUpBedConfirm
 	  type: "svg",
 	  iconPath: iconMap["SitUpBedConfirm"],
-	  size: 43,
+	  size: 50,
 	  showLabel: false,
 	},
   };

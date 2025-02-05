@@ -29,7 +29,7 @@ export function drawPosture(
   // 获取姿态配置
   const config = POSTURE_CONFIGS[posture] || {
 	type: "default" as const,  // 明确指定类型
-    size: 43,
+    size: 50,
     showLabel: true,
   };
 

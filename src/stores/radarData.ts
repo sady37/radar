@@ -1,7 +1,7 @@
 // stores/radarData.ts
 import { defineStore } from "pinia";
 import type { PersonData, VitalSignData } from "./types";
-import { MockRadarService } from "../utils/mockRadarData-new";
+import { MockRadarService } from "../utils/mockRadarData";
 
 export const useRadarDataStore = defineStore("radarData", {
   state: () => ({

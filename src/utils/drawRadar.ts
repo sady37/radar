@@ -47,30 +47,30 @@ function drawCoordinateLines(
 }
 
 function drawRadarCircles(ctx: CanvasRenderingContext2D, scale: number) {
-  // 外圈
-  ctx.beginPath();
-  ctx.arc(0, 0, 15 * scale, 0, Math.PI * 2);
-  ctx.fillStyle = "rgb(190, 227, 248)";
-  ctx.fill();
-  ctx.strokeStyle = "rgb(144, 205, 244)";
-  ctx.lineWidth = 0.5;
-  ctx.stroke();
+	// 外圈
+	ctx.beginPath();
+	ctx.arc(0, 0, 15 * scale, 0, Math.PI * 2);
+	ctx.fillStyle = "rgba(190, 227, 248, 0.5)";
+	ctx.fill();
+	ctx.strokeStyle = "rgba(144, 205, 244, 0.5)";
+	ctx.lineWidth = 0.5;
+	ctx.stroke();
 
-  // 中圈
-  ctx.beginPath();
-  ctx.arc(0, 0, 10 * scale, 0, Math.PI * 2);
-  ctx.fillStyle = "rgb(99, 179, 237)";
-  ctx.fill();
-  ctx.strokeStyle = "rgb(66, 153, 225)";
-  ctx.stroke();
+	// 中圈
+	ctx.beginPath();
+	ctx.arc(0, 0, 10 * scale, 0, Math.PI * 2);
+	ctx.fillStyle = "rgba(99, 179, 237, 0.5)";
+	ctx.fill();
+	ctx.strokeStyle = "rgba(66, 153, 225, 0.5)";
+	ctx.stroke();
 
-  // 内圈
-  ctx.beginPath();
-  ctx.arc(0, 0, 5 * scale, 0, Math.PI * 2);
-  ctx.fillStyle = "rgb(49, 130, 206)";
-  ctx.fill();
-  ctx.strokeStyle = "rgb(43, 108, 176)";
-  ctx.stroke();
+	// 内圈
+	ctx.beginPath();
+	ctx.arc(0, 0, 5 * scale, 0, Math.PI * 2);
+	ctx.fillStyle = "rgba(49, 130, 206, 0.5)";
+	ctx.fill();
+	ctx.strokeStyle = "rgba(43, 108, 176, 0.5)";
+	ctx.stroke();
 }
 
 function drawLEDIndicator(
