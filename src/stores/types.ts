@@ -84,6 +84,22 @@ export interface VitalSignData {
   sleepState: number; // bit 7&6: 睡眠状态 (00:未定义 01:浅睡 10:深睡 11:清醒)
 }
 
+// 添加生理状态相关的枚举
+export enum VitalStatus {
+	Undefined = 'undefined',
+	Normal = 'normal',
+	Warning = 'warning',
+	Danger = 'danger'
+  }
+
+
+  export enum SleepState {
+	Undefined = 0, // 未定义 00
+	LightSleep = 1, // 浅睡 01
+	DeepSleep = 2, // 深睡 10
+	Awake = 3, // 清醒 11
+  }
+
 // 可以添加一些辅助的枚举定义
 export enum PersonEvent {
   None = 0, // 无事件
@@ -93,12 +109,46 @@ export enum PersonEvent {
   LeaveArea = 4, // 离开区域
 }
 
-export enum SleepState {
-  Undefined = 0, // 未定义 00
-  LightSleep = 1, // 浅睡 01
-  DeepSleep = 2, // 深睡 10
-  Awake = 3, // 清醒 11
-}
+
+
+export enum PersonPosture {
+	Init = 0, // 初始化
+	Walking = 1, // 行走
+	FallSuspect = 2, // 疑似跌倒
+	Sitting = 3, // 蹲坐
+	Standing = 4, // 站立
+	FallConfirm = 5, // 跌倒确认
+	Lying = 6, // 卧
+	SitGroundSuspect = 7, // 疑似坐地
+	SitGroundConfirm = 8, // 确认坐地
+	SitUpBed = 9, // 普通床上坐起
+	SitUpBedSuspect = 10, // 疑似床上坐起
+	SitUpBedConfirm = 11, // 确认床上坐起
+  }
+
+  export const POSTURE_LABELS: Record<number, string> = {
+	0: "Init",
+	1: "Walking",
+	2: "FallSuspect",
+	3: "Sitting",
+	4: "Standing",
+	5: "FallConfirm",
+	6: "Lying",
+	7: "SitGroundSuspect",
+	8: "SitGroundConfirm",
+	9: "SitUpBed",		// 普通床上坐起
+	10: "SitUpBedSuspect",  // 疑似床上坐起,monitorBed
+	11: "SitUpBedConfirm", // 确认床上坐起,monitorBed
+  };
+
+
+
+export interface PostureIconConfig {
+	type: "svg" | "default";  // 允许两种类型
+	iconPath: string;
+	size: number;
+	showLabel: boolean;
+  }
 
 
   

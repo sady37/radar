@@ -15,10 +15,10 @@ export function drawRadarSymbol(
 function drawCoordinateLines(
   ctx: CanvasRenderingContext2D,
   mode: "ceiling" | "wall",
-  scale: number,
+  scale: number
 ) {
   ctx.beginPath();
-  ctx.strokeStyle = "#718096";
+  ctx.strokeStyle = "rgb(113, 128, 150)";
   ctx.lineWidth = 0.2;
 
   // 绘制H轴 (左正右负)
@@ -30,9 +30,9 @@ function drawCoordinateLines(
   ctx.lineTo(0, 15 * scale);
   ctx.stroke();
 
-   // 坐标标记
-  ctx.font = `${8 * scale}px Arial`
-  ctx.fillStyle = '#4a5568'
+  // 坐标标记
+  ctx.font = `${8 * scale}px Arial`;
+  ctx.fillStyle = "rgb(74, 85, 104)";
 
   // H轴标记 (左正右负)
   ctx.textAlign = "end";
@@ -41,35 +41,35 @@ function drawCoordinateLines(
   ctx.fillText("-H", 16 * scale, 4 * scale);
 
   // ceiling:V轴标记（只显示-V，+V由LED指示）,wall:指示器在上方，V+在下方
-  if (mode === 'ceiling') {
-    ctx.fillText('-V', 2 * scale, -17 * scale)
-}
+  if (mode === "ceiling") {
+    ctx.fillText("-V", 2 * scale, -17 * scale);
+  }
 }
 
 function drawRadarCircles(ctx: CanvasRenderingContext2D, scale: number) {
   // 外圈
   ctx.beginPath();
   ctx.arc(0, 0, 15 * scale, 0, Math.PI * 2);
-  ctx.fillStyle = "#bee3f8";
+  ctx.fillStyle = "rgb(190, 227, 248)";
   ctx.fill();
-  ctx.strokeStyle = "#90cdf4";
+  ctx.strokeStyle = "rgb(144, 205, 244)";
   ctx.lineWidth = 0.5;
   ctx.stroke();
 
   // 中圈
   ctx.beginPath();
   ctx.arc(0, 0, 10 * scale, 0, Math.PI * 2);
-  ctx.fillStyle = "#63b3ed";
+  ctx.fillStyle = "rgb(99, 179, 237)";
   ctx.fill();
-  ctx.strokeStyle = "#4299e1";
+  ctx.strokeStyle = "rgb(66, 153, 225)";
   ctx.stroke();
 
   // 内圈
   ctx.beginPath();
   ctx.arc(0, 0, 5 * scale, 0, Math.PI * 2);
-  ctx.fillStyle = "#3182ce";
+  ctx.fillStyle = "rgb(49, 130, 206)";
   ctx.fill();
-  ctx.strokeStyle = "#2b6cb0";
+  ctx.strokeStyle = "rgb(43, 108, 176)";
   ctx.stroke();
 }
 
@@ -82,8 +82,8 @@ function drawLEDIndicator(
 
   // LED指示器
   ctx.beginPath();
-  ctx.fillStyle = "#48bb78";
-  ctx.strokeStyle = "#2f855a";
+  ctx.fillStyle = "rgb(72, 187, 120)";
+  ctx.strokeStyle = "rgb(47, 133, 90)";
   ctx.lineWidth = 0.5;
   //-10，与中圆r相等
   ctx.rect(-10 * scale, (indicatorY - 3) * scale, 20 * scale, 6 * scale);
@@ -91,7 +91,7 @@ function drawLEDIndicator(
   ctx.stroke();
 
   // 模式标识
-  ctx.fillStyle = "#1a202c";
+  ctx.fillStyle = "rgb(26, 32, 44)";
   ctx.font = `bold ${14 * scale}px sans-serif`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";

@@ -35,19 +35,19 @@
   		<!--<button class="action-btn set-btn" @click="updateObject" :disabled="editMode !== 'object'">Set</button> -->
   		<button class="action-btn delete-btn" @click="deleteObject" :disabled="editMode !== 'object'">Delete</button>
 		<!-- 新增 layout 按钮行 -->
-		<button class="layout-btn" @click="saveRoomLayout">SaveRm</button>
-  		<button class="layout-btn" @click="loadRoomLayout">LoadRm</button>
-		<button class="layout-btn" @click="saveRadarConfig">SaveRd</button>
-		<button class="layout-btn" @click="loadRadarConfig">LoadRd</button> 
+		<button class="layout-btn loadRoom-btn" @click="loadRoomLayout">LoadRm</button>
+		<button class="layout-btn loadRadar-btn" @click="loadRadarConfig">LoadRd</button>
+		<button class="layout-btn saveRadar-btn" @click="saveRadarConfig">SaveRd</button>
+		<button class="layout-btn saveRoom-btn" @click="saveRoomLayout">SaveRm</button>
 	 </div>
     </div>
 
     <!-- 对象属性区 -->
 	<div class="property-area">
 	    <div class="name-row">
-			<span>Name:</span>
+			<span></span>
 	        <input type="text" v-model="objectName" placeholder="Name" class="name-input"  />
-			<!-- <button class="layout-btn" @click="loadRadarConfig">LoadRd</button>  -->
+			<button class="test-btn" :class="{ 'active': isTesting }" @click="toggleTest">Test</button>
 	    </div>
 
 	    <div
@@ -118,7 +118,7 @@
 	                    <input
 	                        type="number"
 	                        v-model="currentModeConfig.boundary.leftH"
-	                        min="10"
+	                        min="0"
 	                        max="300"
 	                        step="10"
 	                        @change="validateBoundary"
@@ -130,7 +130,7 @@
 	                    <input
 	                        type="number"
 	                        v-model="currentModeConfig.boundary.rightH"
-	                        min="10"
+	                        min="0"
 	                        max="300"
 	                        step="10"
 	                        @change="validateBoundary"
@@ -144,7 +144,7 @@
 	                    <input
 	                        type="number"
 	                        v-model="currentModeConfig.boundary.frontV"
-	                        :min="properties.mode === 'wall' ? 30 : 10"
+	                        :min="properties.mode === 'wall' ? 0 : 0"
 	                        :max="properties.mode === 'wall' ? 400 : 200"
 	                        step="10"
 	                        @change="validateBoundary"
@@ -156,7 +156,7 @@
 	                    <input
 	                        type="number"
 	                        v-model="currentModeConfig.boundary.rearV"
-	                        :min="properties.mode === 'wall' ? 0 : 10"
+	                        :min="properties.mode === 'wall' ? 0 : 0"
 	                        :max="properties.mode === 'wall' ? 0 : 200"
 	                        step="10"
 	                        @change="validateBoundary"
@@ -291,6 +291,7 @@ import { useObjectsStore } from "../stores/objects";
 import { useMouseStore } from "../stores/mouse";
 import { useCanvasStore } from "../stores/canvas";
 import type { ObjectProperties, RoomLayout } from "../stores/types";
+import { useRadarDataStore } from '../stores/radarData';
 
 
 
@@ -298,6 +299,19 @@ import type { ObjectProperties, RoomLayout } from "../stores/types";
 const objectsStore = useObjectsStore();
 const mouseStore = useMouseStore();
 const canvasStore = useCanvasStore();
+
+// mock test
+const radarDataStore = useRadarDataStore();
+const isTesting = ref(false);
+
+const toggleTest = () => {
+  isTesting.value = !isTesting.value;
+  if (isTesting.value) {
+    radarDataStore.startDataStream();
+  } else {
+    radarDataStore.stopDataStream();
+  }
+};
 
 
 // 3. 接口定义
@@ -411,7 +425,7 @@ const validateHeight = () => {
     heightConfig.max,
     Math.max(
       heightConfig.min,
-      Math.round(heightConfig.default / heightConfig.step) * heightConfig.step
+      Math.round(heightConfig.default / heightConfig.step) * 10
     )
   );
 };
@@ -420,15 +434,15 @@ const validateBoundary = () => {
   const currentMode = properties.mode;
   const boundary = currentModeConfig.value.boundary;
   
-  boundary.leftH = Math.min(300, Math.max(10, Math.round(boundary.leftH / 10) * 10));
-  boundary.rightH = Math.min(300, Math.max(10, Math.round(boundary.rightH / 10) * 10));
+  boundary.leftH = Math.min(300, Math.max(0, Math.round(boundary.leftH / 10) * 10));
+  boundary.rightH = Math.min(300, Math.max(0, Math.round(boundary.rightH / 10) * 10));
   
   if (currentMode === "wall") {
-    boundary.frontV = Math.min(400, Math.max(30, Math.round(boundary.frontV / 10) * 10));
+    boundary.frontV = Math.min(400, Math.max(0, Math.round(boundary.frontV / 10) * 10));
     boundary.rearV = 0;  // wall模式rear固定为0
   } else {
-    boundary.frontV = Math.min(200, Math.max(10, Math.round(boundary.frontV / 10) * 10));
-    boundary.rearV = Math.min(200, Math.max(10, Math.round(boundary.rearV / 10) * 10));
+    boundary.frontV = Math.min(200, Math.max(0, Math.round(boundary.frontV / 10) * 10));
+    boundary.rearV = Math.min(200, Math.max(0, Math.round(boundary.rearV / 10) * 10));
   }
 };
 
@@ -479,112 +493,6 @@ watch(
   }
 );
 
-/* 使用watch 单独监听属性变化，同步到选中对象的属性
-//监听objectName.value的变化，同步到选中对象的name属性
-watch(objectName, (newName) => {
-  if (objectsStore.selectedId) {
-    objectsStore.updateObject(objectsStore.selectedId, {
-      ...objectsStore.selectedObject,
-      name: newName
-    });
-  }
-});
-
-//监听isLocked.value的变化，同步到选中对象的isLocked属性
-watch(  () => isLocked.value,  (newValue) => {
-    if (objectsStore.selectedId) {
-      const obj = objectsStore.objects.find((o) => o.id === objectsStore.selectedId);
-      if (obj) {
-        objectsStore.updateObject(objectsStore.selectedId, {
-          ...obj,
-          isLocked: newValue,
-        });
-      }
-    }
-  },
-);
-
-
-
-//监听radar model的变化，同步到选中对象的mode属性
-watch(
-  () => properties.mode,
-  (newMode) => {
-    if (objectsStore.selectedId) {
-      const obj = objectsStore.objects.find((o) => o.id === objectsStore.selectedId);
-      if (obj && obj.typeName === 'Radar') {
-        objectsStore.updateObject(objectsStore.selectedId, {
-          ...obj,
-          mode: newMode,
-        });
-      }
-    }
-  }
-);
-
-watch(
-  () => properties.showBoundary,
-  (newValue) => {
-    if (objectsStore.selectedId) {
-      const obj = objectsStore.objects.find((o) => o.id === objectsStore.selectedId);
-      if (obj && obj.typeName === 'Radar') {
-        objectsStore.updateObject(objectsStore.selectedId, {
-          ...obj,
-          showBoundary: newValue,
-        });
-      }
-    }
-  }
-);
-
-watch(
-  () => properties.showSignal,
-  (newValue) => {
-    if (objectsStore.selectedId) {
-      const obj = objectsStore.objects.find((o) => o.id === objectsStore.selectedId);
-      if (obj && obj.typeName === 'Radar') {
-        objectsStore.updateObject(objectsStore.selectedId, {
-          ...obj,
-          showSignal: newValue,
-        });
-      }
-    }
-  }
-);
-
-
-watch(
-  () => properties.isMonitored,
-  (newValue) => {
-    if (objectsStore.selectedId) {
-      const obj = objectsStore.objects.find((o) => o.id === objectsStore.selectedId);
-      if (obj && obj.typeName === 'Bed') {
-        objectsStore.updateObject(objectsStore.selectedId, {
-          ...obj,
-          isMonitored: newValue,
-        });
-      }
-    }
-  }
-);
-
-
-//监听properties.borderOnly的变化，同步到选中对象的borderOnly属性
-watch(
-  () => properties.borderOnly,
-  (newValue) => {
-    if (objectsStore.selectedId) {
-      const obj = objectsStore.objects.find((o) => o.id === objectsStore.selectedId);
-      if (obj && obj.typeName === 'Other') {
-        objectsStore.updateObject(objectsStore.selectedId, {
-          ...obj,
-          borderOnly: newValue,
-        });
-      }
-    }
-  }
-);
-*/
 
 // 监听Name、isLocked、mode、borderOnly、isMonitored,showBoundary,showSignal的变化，同步到选中对象的属性
 watch(
@@ -979,7 +887,7 @@ const loadRadarConfig = () => {
           background: #add8e6;
         }
         &.exclude {
-          background: #f0e68c;
+          background: #EFFFA2; // rgb(240, 230, 140)
         }
         &.other {
           background: #d3d3d3;
@@ -1091,8 +999,16 @@ const loadRadarConfig = () => {
         font-size: 12px;
         cursor: pointer;
 		//background: #d5e7f7;
+		&.loadRoom-btn {
+			background: #f9f1f1;}
+		&.loadRadar-btn {
+			background: #e6eff8;}
+		&.saveRadar-btn {
+			background: #e6eff8;}
+		&.saveRoom-btn {
+			background: #f9f1f1;}
 		&:hover {
-		  background: #b3d7f5;
+		  background: #a5cff2;
 		}
 	  }
     }
@@ -1112,7 +1028,7 @@ const loadRadarConfig = () => {
   }
 
  
-  .name-row {
+ /* .name-row {
   display: flex;
   gap: 4px;
   align-items: center;
@@ -1144,8 +1060,8 @@ const loadRadarConfig = () => {
     }
   }
 }
-
-  /*
+*/
+  
   .name-row {
     margin-bottom: 8px; // 增加底部间距为8px
 	
@@ -1163,9 +1079,9 @@ const loadRadarConfig = () => {
       margin-right: 6px; // 增加右边距为2px
     }
 
- 	 删除set键，layout 上移至action-buttons
-		.layout-btn {
-		width:49px;
+ 	
+		.test-btn {
+		width:46px;
         height: 23px;
 		border: 1px solid #ccc;
         border-radius: 2px;
@@ -1178,7 +1094,7 @@ const loadRadarConfig = () => {
 		}
   	} 
   }
-  */
+  
 
   .size-row {
     display: flex; // 使用flex布局

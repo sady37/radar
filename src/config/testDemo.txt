@@ -1,0 +1,257 @@
+我根据提供的布局配置分析：
+
+房间布局：
+
+
+房间大小约 568x351 (从墙的位置计算)
+床位于 (47, 214)，尺寸 190x90，旋转270度
+门在 (231, 450)
+雷达在 (60, 216)，天花板安装模式
+
+
+根据这个布局修改 mockRadarData.ts
+
+export class MockRadarService {
+  private bedArea = {
+    center: { x: 47, y: 214 },
+    length: 190,
+    width: 90,
+    rotation: 270
+  };
+
+  private roomBounds = {
+    minX: -284,
+    maxX: 284,
+    minY: 103,
+    maxY: 454
+  };
+
+  private isInBedArea(x: number, y: number): boolean {
+    // 考虑床的旋转角度
+    const dx = x - this.bedArea.center.x;
+    const dy = y - this.bedArea.center.y;
+    
+    // 旋转坐标系统 (270度)
+    const rotatedX = dy;
+    const rotatedY = -dx;
+
+    // 检查是否在床范围内
+    return Math.abs(rotatedX) <= this.bedArea.width/2 && 
+           Math.abs(rotatedY) <= this.bedArea.length/2;
+  }
+
+  private generatePosition(): Point {
+    // 生成房间内的随机位置
+    const x = Math.floor(Math.random() * (this.roomBounds.maxX - this.roomBounds.minX) + this.roomBounds.minX);
+    const y = Math.floor(Math.random() * (this.roomBounds.maxY - this.roomBounds.minY) + this.roomBounds.minY);
+    return { x, y };
+  }
+
+  private generateRandomPosture(position: Point): number {
+    if (this.isInBedArea(position.x, position.y)) {
+      // 在床上的姿态
+      const bedPostures = [
+        { posture: 6, weight: 50 },  // Lying
+        { posture: 9, weight: 20 },  // SitUpBed
+        { posture: 10, weight: 15 }, // SitUpBedSuspect
+        { posture: 11, weight: 15 }  // SitUpBedConfirm
+      ];
+      return this.weightedRandom(bedPostures);
+    } else {
+      // 床外的姿态
+      const normalPostures = [
+        { posture: 1, weight: 40 }, // Walking
+        { posture: 4, weight: 30 }, // Standing
+        { posture: 3, weight: 20 }, // Sitting
+        { posture: 2, weight: 5 },  // FallSuspect
+        { posture: 5, weight: 5 }   // FallConfirm
+      ];
+      return this.weightedRandom(normalPostures);
+    }
+  }
+
+  generateMockTrackData(): PersonData[] {
+    const personCount = Math.floor(Math.random() * 2) + 1; // 1-2人
+    const persons: PersonData[] = [];
+
+    for (let i = 0; i < personCount; i++) {
+      const position = this.generatePosition();
+      const posture = this.generateRandomPosture(position);
+      
+      persons.push({
+        id: i,
+        position: {
+          x: position.x,
+          y: position.y,
+          z: Math.floor(Math.random() * 200 + 50) // 50-250cm高度
+        },
+        remainTime: 30,
+        posture: posture,
+        event: this.generateRandomEvent(),
+        areaId: Math.floor(Math.random() * 4)
+      });
+
+      // 只有在床上时才生成生理数据
+      if (this.isInBedArea(position.x, position.y) && 
+          (posture === 6 || posture === 9 || posture === 10 || posture === 11)) {
+        this.vital = this.generateMockVitalData();
+      } else {
+        this.vital = null;
+      }
+    }
+
+    return persons;
+  }
+}
+
+
+原mockRadarData.ts
+// src/utils/mockRadarData.ts
+import type { PersonData, VitalSignData } from "../stores/types";
+import { PersonEvent, SleepState } from "../stores/types";
+
+export class MockRadarService {
+  private timer: number | null = null;
+  private positionInterval = 1000; // 1秒更新轨迹
+  private vitalSignInterval = 2000; // 2秒更新生理指标
+
+  /*
+ generateMockTrackData(): PersonData {
+   const hasTarget = Math.random() > 0.1  // 90%概率有人
+   const event = this.generateRandomEvent()
+
+   return {
+     id: hasTarget ? Math.floor(Math.random() * 8) : 88,  // 0-7或88(无人)
+     position: {
+       x: Math.floor(Math.random() * 600 - 300),  // -300~300 逻辑单位
+       y: Math.floor(Math.random() * 400 - 200),  // -200~200 逻辑单位
+       z: Math.floor(Math.random() * 300)         // 0~300 逻辑单位
+     },
+     remainTime: 30,
+     posture: this.generateRandomPosture(),
+     event: event,
+     areaId: event === PersonEvent.EnterArea || event === PersonEvent.LeaveArea 
+       ? Math.floor(Math.random() * 4) 
+       : 0
+   }
+ }
+ */
+
+  generateMockTrackData(): PersonData[] {
+    const personCount = Math.floor(Math.random() * 3) + 1; // 1-3人
+    const persons: PersonData[] = [];
+
+    for (let i = 0; i < personCount; i++) {
+      persons.push({
+        id: i, // 0-7
+        position: {
+          x: Math.floor(Math.random() * 600 - 300),
+          y: Math.floor(Math.random() * 400 - 200),
+          z: Math.floor(Math.random() * 300),
+        },
+        remainTime: 30,
+        posture: this.generateRandomPosture(),
+        event: this.generateRandomEvent(),
+        areaId: Math.floor(Math.random() * 4),
+      });
+    }
+
+    return persons;
+  }
+
+  generateMockVitalData(): VitalSignData {
+    return {
+      type: 0, // 实时呼吸心率
+      breathing: Math.floor(Math.random() * 10 + 15), // 15-25次/分钟
+      heartRate: Math.floor(Math.random() * 20 + 60), // 60-80次/分钟
+      sleepState: this.generateRandomSleepState(),
+    };
+  }
+
+  startMockDataStream(
+    onTrackData: (data: PersonData[]) => void,
+    onVitalData: (data: VitalSignData) => void,
+  ): void {
+    const trackTimer = window.setInterval(() => {
+      const trackData = this.generateMockTrackData();
+      onTrackData(trackData);
+    }, this.positionInterval);
+
+    const vitalTimer = window.setInterval(() => {
+      const vitalData = this.generateMockVitalData();
+      onVitalData(vitalData);
+    }, this.vitalSignInterval);
+
+    this.timer = trackTimer;
+  }
+
+  stopMockDataStream(): void {
+    if (this.timer) {
+      window.clearInterval(this.timer);
+      this.timer = null;
+    }
+  }
+
+  private generateRandomPosture(): number {
+    // 设置不同姿态的出现概率
+    const probabilities = [
+      { posture: 0, weight: 5 }, // Init
+      { posture: 1, weight: 15 }, // Walking
+      { posture: 2, weight: 5 }, // FallSuspect
+      { posture: 3, weight: 10 }, // Sitting
+      { posture: 4, weight: 15 }, // Standing
+      { posture: 5, weight: 5 }, // FallConfirm
+      { posture: 6, weight: 15 }, // Lying
+      { posture: 7, weight: 5 }, // SitGroundSuspect
+      { posture: 8, weight: 5 }, // SitGroundConfirm
+      { posture: 9, weight: 10 }, // SitUpBed
+      { posture: 10, weight: 5 }, // SitUpBedSuspect
+      { posture: 11, weight: 5 }, // SitUpBedConfirm
+    ];
+
+    const totalWeight = probabilities.reduce(
+      (sum, item) => sum + item.weight,
+      0,
+    );
+    let random = Math.random() * totalWeight;
+
+    for (const item of probabilities) {
+      random -= item.weight;
+      if (random <= 0) {
+        return item.posture;
+      }
+    }
+    return 0; // 默认返回Init状态
+  }
+
+  private generateRandomEvent(): PersonEvent {
+    // 80%概率无事件，20%概率有事件
+    if (Math.random() > 0.2) {
+      return PersonEvent.None;
+    }
+    // 在有事件的情况下随机选择一种事件
+    const events = [
+      PersonEvent.EnterRoom,
+      PersonEvent.LeaveRoom,
+      PersonEvent.EnterArea,
+      PersonEvent.LeaveArea,
+    ];
+    return events[Math.floor(Math.random() * events.length)];
+  }
+
+  private generateRandomSleepState(): number {
+    const states = [
+      SleepState.Undefined,
+      SleepState.LightSleep,
+      SleepState.DeepSleep,
+      SleepState.Awake,
+    ];
+    const state = states[Math.floor(Math.random() * states.length)];
+    return state << 6; // 移位到bit 7&6位置
+  }
+}
+
+
+"rgb(240, 230, 140)" : "rgb(173, 216, 230)";rgb(239, 250, 152)  rgb(121, 120, 120)
+exclude
+#EFFFA2 rgb(239, 255, 162)。

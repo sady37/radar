@@ -22,19 +22,20 @@
 
 <script setup lang="ts">
 // 1. 导入
-import { ref, onMounted, watch, reactive } from "vue";
+import { ref, onMounted, onUnmounted, watch, reactive } from "vue";
 //import { useRadarStore } from '../stores/radar'
 //import type { RadarObject, ObjectProperties, BoundarySettings, Point } from '../stores/types'  // 添加 Point
 
-import type { ObjectProperties, Point } from "../stores/types";
+import type { ObjectProperties, PostureIconConfig ,Point } from "../stores/types";
 import { useObjectsStore } from "../stores/objects";
 import { useMouseStore } from "../stores/mouse";
 import { useCanvasStore } from "../stores/canvas";
 import { useRadarDataStore } from "../stores/radarData"; // 添加
 import { drawRadarBoundary, drawRadarSymbol } from "../utils/drawRadar";
 import { drawPosture } from "../utils/drawPosture";
+import { VITAL_SIGN_CONFIGS,getHeartRateStatus,getBreathingStatus, getSleepStatus} from '../utils/postureIcons';
 //import { drawTrajectory } from '../utils/trajectoryUtils';
-import { generateRadarReport } from "../utils/radarUtils";
+import { generateRadarReport,toCanvasCoordinate  } from "../utils/radarUtils";
 
 // 2. 组件状态定义
 const canvasRef = ref<HTMLCanvasElement | null>(null);
@@ -51,6 +52,27 @@ const objectsStore = useObjectsStore();
 const mouseStore = useMouseStore();
 const canvasStore = useCanvasStore();
 const radarDataStore = useRadarDataStore();
+
+/*// 在组件挂载时启动数据流
+onMounted(() => {
+  const canvas = canvasRef.value;
+  if (!canvas) return;
+
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+
+  // 启动模拟数据流
+  radarDataStore.startDataStream();
+
+  drawCoordinateSystem(ctx);
+});
+
+// 在组件卸载时停止数据流
+onUnmounted(() => {
+  radarDataStore.stopDataStream();
+});
+*/
+
 
 // 3. 生命周期钩子
 onMounted(() => {
@@ -101,6 +123,7 @@ watch([showScale, showGrid], () => {
     drawObjects(ctx);
   }
 });
+
 // 监听人员数据变化
 watch(
   () => radarDataStore.currentPersons,
@@ -236,8 +259,8 @@ const handleCanvasClick = (event: MouseEvent) => {
   // 步骤2: 考虑缩放比例，转换为逻辑坐标
   const logicalX = Math.round((canvasX - canvasStore.width / 2) / scale.value);
   const logicalY = Math.round(canvasY / scale.value);
-  console.log("logicalX:", logicalX);
-  console.log("logicalY:", logicalY);
+  //console.log("logicalX:", logicalX);
+  //console.log("logicalY:", logicalY);
 
   // 步骤3：检测碰撞
   const clickedObject = objectsStore.getOrderedObjects.reverse().find((obj) => {
@@ -250,8 +273,8 @@ const handleCanvasClick = (event: MouseEvent) => {
       return Math.sqrt(dx * dx + dy * dy) <= 15;
     } else if (obj.typeName === "Wall") {
 	 // Wall 使用较大的检测范围
-	 const halfLength = obj.length / 2 + 15;  // 增加到15
-	 const halfWidth = obj.width / 2 + 15;    // 增加到15
+	 const halfLength = obj.length / 2 + 25;  // 增加到25
+	 const halfWidth = obj.width / 2 + 25;    // 增加到25
 	 return Math.abs(dx) <= halfLength && Math.abs(dy) <= halfWidth;
 	}	else {
 	      const halfLength = obj.length / 2 + 5;
@@ -288,7 +311,7 @@ const isPointInObject = (
 // 5.4 绘制相关
 const drawCoordinateSystem = (ctx: CanvasRenderingContext2D) => {
   // 底色和原点
-  ctx.fillStyle = "#FFF8DC";
+  ctx.fillStyle = "rgb(255, 248, 220)";
   ctx.fillRect(0, 0, canvasStore.width, canvasStore.height);
 
   const originX = canvasStore.width / 2; // 原点X坐标（画布中心）
@@ -297,7 +320,7 @@ const drawCoordinateSystem = (ctx: CanvasRenderingContext2D) => {
   // 绘制网格
   if (canvasStore.showGrid) {
     const gridLogicSize = 50; // 网格的逻辑间隔，固定为 50 逻辑单位
-    ctx.strokeStyle = "#ddd";
+    ctx.strokeStyle = "rgb(221, 221, 221)";
     ctx.lineWidth = 0.5;
     // X 轴网格
     // 右侧网格线（包含原点）
@@ -333,7 +356,7 @@ const drawCoordinateSystem = (ctx: CanvasRenderingContext2D) => {
   // 刻度标注
   if (canvasStore.showScale) {
     ctx.font = "12px Arial";
-    ctx.fillStyle = "#000";
+    ctx.fillStyle = "rgb(0, 0, 0)";
 
     const tickLogicInterval = 100; // 刻度逻辑间隔
 
@@ -374,115 +397,9 @@ const drawCoordinateSystem = (ctx: CanvasRenderingContext2D) => {
     // 原点标记
     ctx.beginPath();
     ctx.arc(originX, originY, 3, 0, Math.PI * 2);
-    ctx.fillStyle = "#1890ff";
+    ctx.fillStyle = "rgb(24, 144, 255)";
     ctx.fill();
   }
-
-  // 添加点击处理函数 v1.5.1
-  const handleCanvasClick = (event: MouseEvent) => {
-    const rect = canvasRef.value?.getBoundingClientRect();
-    if (!rect) return;
-
-    // 步骤1：获取鼠标在画布内的物理像素位置
-    const canvasX = event.clientX - rect.left;
-    const canvasY = event.clientY - rect.top;
-
-    // 步骤2: 考虑缩放比例，转换为逻辑坐标
-    const logicalX = Math.round(
-      (canvasX - canvasStore.width / 2) / scale.value
-    );
-    const logicalY = Math.round(canvasY / scale.value);
-
-    // 步骤3：检测碰撞
-    // 按绘制顺序反向检查，确保上层对象优先选中
-    const clickedObject = objectsStore.getOrderedObjects
-      .reverse()
-      .find((obj) => {
-        const dx = logicalX - obj.position.x;
-        const dy = logicalY - obj.position.y;
-        //const dx = x - obj.position.x;
-        //const dy = y - obj.position.y;
-
-        // 根据对象类型确定选择范围
-        if (obj.typeName === "Radar") {
-          // 圆形选择区域
-          return Math.sqrt(dx * dx + dy * dy) <= 15; // 15为感应半径
-        } else {
-          // 矩形选择区域，考虑对象尺寸
-          const halfLength = obj.length / 2 + 5; // 额外5单位的感应区域
-          const halfWidth = obj.width / 2 + 5;
-          return Math.abs(dx) <= halfLength && Math.abs(dy) <= halfWidth;
-        }
-      });
-
-    if (clickedObject) {
-      objectsStore.selectObject(clickedObject.id);
-    } else {
-      objectsStore.selectObject(null);
-    }
-  };
-
-  const updateMousePosition = (event: MouseEvent) => {
-    const rect = canvasRef.value?.getBoundingClientRect();
-    if (!rect) return;
-
-    const x = Math.round(
-      (event.clientX - rect.left - canvasStore.width / 2) / scale.value
-    ); // 到中心点的X偏移
-    const y = Math.round((event.clientY - rect.top) / scale.value); // 到顶部的Y偏移
-
-    mouseStore.updatePosition(x, y);
-  };
-
-  const handleDrag = (event: MouseEvent) => {
-    const rect = canvasRef.value?.getBoundingClientRect();
-    if (!rect) return;
-
-    const obj = objectsStore.objects.find(
-      (o) => o.id === objectsStore.selectedId
-    );
-    // 检查对象是否锁定
-    if (!obj || obj.isLocked) return; // 如果对象被锁定，直接返回
-
-    const x = Math.round(
-      (event.clientX - rect.left - canvasStore.width / 2) / scale.value
-    );
-    const y = Math.round((event.clientY - rect.top) / scale.value);
-
-    objectsStore.updateObject(obj.id, {
-      ...obj,
-      position: { x, y },
-    });
-  };
-
-  const handleMouseMove = (event: MouseEvent) => {
-    if (isDragging.value) {
-      handleDrag(event);
-    } else {
-      updateMousePosition(event);
-    }
-  };
-
-  const handleMouseDown = (event: MouseEvent) => {
-    if (!objectsStore.selectedId) return;
-    // 检查对象是否锁定
-    const obj = objectsStore.objects.find(
-      (o) => o.id === objectsStore.selectedId
-    );
-    if (!obj || obj.isLocked) return; // 如果对象被锁定，直接返回
-
-    isDragging.value = true;
-
-    const rect = canvasRef.value?.getBoundingClientRect();
-    if (!rect) return;
-
-    dragStartPos.x = event.clientX - rect.left;
-    dragStartPos.y = event.clientY - rect.top;
-  };
-
-  const handleMouseUp = () => {
-    isDragging.value = false;
-  };
 };
 
 const drawObject = (ctx: CanvasRenderingContext2D, obj: ObjectProperties) => {
@@ -504,16 +421,16 @@ const drawObject = (ctx: CanvasRenderingContext2D, obj: ObjectProperties) => {
       ctx.beginPath();
       ctx.rect(
         -halfLength,
-        -halfWidth,
+		-halfWidth,
         obj.length * scale.value,
         obj.width * scale.value
       );
-      ctx.fillStyle = "#a0eda0";
+      ctx.fillStyle = "rgb(160, 237, 160)";
       ctx.fill();
-      ctx.strokeStyle = "#666";
+      ctx.strokeStyle = "rgb(102, 102, 102)";
       ctx.stroke();
       // 添加名称标签
-      ctx.fillStyle = "#000";
+      ctx.fillStyle = "rgb(0, 0, 0)";
       ctx.font = `${12 * scale.value}px Arial`;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
@@ -528,17 +445,17 @@ const drawObject = (ctx: CanvasRenderingContext2D, obj: ObjectProperties) => {
         obj.length * scale.value,
         obj.width * scale.value
       );
-      ctx.fillStyle = obj.isMonitored ? "#f0e68c" : "#add8e6";
+      ctx.fillStyle = obj.isMonitored ? "rgb(240, 230, 140)" : "rgb(173, 216, 230)";
       ctx.fill();
-      ctx.strokeStyle = "#666";
+      ctx.strokeStyle = "rgb(102, 102, 102)";
       ctx.stroke();
-      ctx.fillStyle = "#000";
+      ctx.fillStyle = "rgb(0, 0, 0)";
       ctx.font = `${12 * scale.value}px Arial`;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.fillText(obj.name, obj.length/2,(obj.width/2 + 5) ); // 在对象外侧绘制名称
-      break;
-
+      ctx.fillText(obj.name, obj.length/2,(obj.width/2+10) ); // 在对象外侧绘制名称
+	  break;
+	 
     case "Exclude":
       ctx.beginPath();
       ctx.rect(
@@ -547,9 +464,9 @@ const drawObject = (ctx: CanvasRenderingContext2D, obj: ObjectProperties) => {
         obj.length * scale.value,
         obj.width * scale.value
       );
-      ctx.fillStyle = "#f0e68c";
+      ctx.fillStyle = "rgb(239, 255, 162)"; //#EFFFA2 rgb(239, 255, 162)
       ctx.fill();
-      ctx.strokeStyle = "#666";
+      ctx.strokeStyle = "rgb(102, 102, 102)";
       ctx.stroke();
       break;
 
@@ -562,10 +479,10 @@ const drawObject = (ctx: CanvasRenderingContext2D, obj: ObjectProperties) => {
         obj.width * scale.value
       );
       if (!obj.borderOnly) {
-        ctx.fillStyle = "#d3d3d3";
+        ctx.fillStyle = "rgb(211, 211, 211)";
         ctx.fill();
       }
-      ctx.strokeStyle = "#666";
+      ctx.strokeStyle = "rgb(102, 102, 102)";
       ctx.stroke();
       break;
 
@@ -577,9 +494,9 @@ const drawObject = (ctx: CanvasRenderingContext2D, obj: ObjectProperties) => {
         obj.length * scale.value,
         obj.width * scale.value
       );
-      ctx.fillStyle = "#4a4a4a"; // 灰黑色
+      ctx.fillStyle = "rgb(120, 120, 120)"; // 灰黑色
       ctx.fill();
-      ctx.strokeStyle = "#666";
+      ctx.strokeStyle = "rgb(102, 102, 102)";
       ctx.stroke();
       break;
 
@@ -592,11 +509,11 @@ const drawObject = (ctx: CanvasRenderingContext2D, obj: ObjectProperties) => {
         obj.length * scale.value,
         obj.width * scale.value
       );
-      ctx.fillStyle = "#f0e68c";
+      ctx.fillStyle = "rgb(239, 255, 162)";
       ctx.fill();
-      ctx.strokeStyle = "#666";
+      ctx.strokeStyle = "rgb(102, 102, 102)";
       ctx.stroke();
-      ctx.fillStyle = "#000";
+      ctx.fillStyle = "rgb(0, 0, 0)";
       ctx.font = `${12 * scale.value}px Arial`;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
@@ -621,14 +538,14 @@ const drawObject = (ctx: CanvasRenderingContext2D, obj: ObjectProperties) => {
       ctx.lineTo(-size, size);
       ctx.lineTo(size, size);
       ctx.closePath();
-      ctx.fillStyle = "#1890ff";
+      ctx.fillStyle = "rgb(24, 144, 255)";
       ctx.fill();
       break;
   }
 
   // 后绘制选中高亮
   if (obj.id === objectsStore.selectedId) {
-    ctx.strokeStyle = "#1890ff";
+    ctx.strokeStyle = "rgb(24, 144, 255)";
     ctx.lineWidth = 2;
     if (obj.typeName === "Radar") {
       ctx.beginPath();
@@ -649,10 +566,69 @@ const drawObject = (ctx: CanvasRenderingContext2D, obj: ObjectProperties) => {
   ctx.restore();
 };
 
+const drawStatusPanel = (ctx: CanvasRenderingContext2D) => {
+  const vital = radarDataStore.currentVital;
+  if (!vital) return;
+  
+  ctx.save();
+  // 透明背景
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+  ctx.strokeStyle = 'rgba(204, 204, 204, 0.2)';
+  ctx.fillRect(10, 10, 200, 80);
+
+  // 统一图标加载函数
+  const drawIcon = (iconConfig: PostureIconConfig, x: number, y: number, value: string) => {
+    const icon = new Image();
+    icon.src = iconConfig.iconPath;
+    icon.onload = () => {
+      ctx.drawImage(icon, x, y, iconConfig.size, iconConfig.size);
+      ctx.font = '14px Arial';
+      ctx.fillStyle = '#333';
+      ctx.textAlign = 'left';
+      //ctx.fillText(value, x + iconConfig.size + 5, y + iconConfig.size/2 + 5);
+    };
+  };
+
+  // 心率
+  const heartStatus = getHeartRateStatus(vital?.heartRate);
+  drawIcon(
+    VITAL_SIGN_CONFIGS.heart[heartStatus], 
+    20, 15,
+    vital?.heartRate ? `${vital.heartRate} ` : '--'
+  );
+
+  // 呼吸
+  const breathingStatus = getBreathingStatus(vital?.breathing);
+  drawIcon(
+    VITAL_SIGN_CONFIGS.breathing[breathingStatus], 
+    20, 45,
+    vital?.breathing ? `${vital.breathing}  ` : '--'
+  );
+
+  // 睡眠状态
+  // 睡眠状态
+  const sleepStatus = getSleepStatus(vital?.sleepState);
+  drawIcon(
+    VITAL_SIGN_CONFIGS.sleep[sleepStatus], 
+    20, 75,
+    vital?.sleepState ? sleepStatus.toUpperCase() : '--'
+  );
+  ctx.restore();
+};
+
 const drawPersons = (ctx: CanvasRenderingContext2D) => {
   const persons = radarDataStore.currentPersons;
+
+
+ // 绘制人员姿态图标
   persons.forEach((person) => {
     if (person.id === 88) return; // 跳过无人标记
+
+	const canvasX = canvasStore.width / 2 + person.position.x * scale.value;
+    const canvasY = person.position.y * scale.value;
+    
+  const radar = objectsStore.objects.find((obj) => obj.typeName === "Radar");
+  const canvasPos = radar ? toCanvasCoordinate(  { h: person.position.x, v: person.position.y },  radar) : { x: 0, y: 0 };
 
     /*暂不做绘制轨迹
 		// 如果需要绘制轨迹，先绘制轨迹
@@ -660,12 +636,14 @@ const drawPersons = (ctx: CanvasRenderingContext2D) => {
 	      drawTrajectory(ctx, person, scale.value);
 	    }
         */
-
+    
     // 绘制人物
     drawPosture(
       ctx,
       {
-        position: person.position,
+        position: {
+    		x: canvasPos.x * scale.value + canvasStore.width / 2,
+    		y: canvasPos.y * scale.value  },
         rotation: 0, // 或者其他旋转值
         posture: person.posture,
         selected: `person_${person.id}` === objectsStore.selectedId, // 转换为字符串比较
@@ -673,7 +651,12 @@ const drawPersons = (ctx: CanvasRenderingContext2D) => {
       scale.value
     );
   });
-};
+
+  // 绘制生理指标面板
+  if (persons.length > 0) {
+   drawStatusPanel(ctx);
+ }
+}
 
 const drawObjects = (ctx: CanvasRenderingContext2D) => {
   // 非雷达对象
@@ -694,7 +677,7 @@ const drawObjects = (ctx: CanvasRenderingContext2D) => {
   const radar = objectsStore.objects.find((obj) => obj.typeName === "Radar");
   if (radar) {
     const report = generateRadarReport(radar, objectsStore.objects);
-    if (report) {
+    /*if (report) {
       // report 可能为 null
       console.log("Radar Report:", {
         // 雷达基本信息
@@ -721,7 +704,7 @@ const drawObjects = (ctx: CanvasRenderingContext2D) => {
           ),
         })),
       });
-    }
+    }*/
   }
 };
 </script>

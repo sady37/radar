@@ -1,12 +1,14 @@
 //src/utils/postureIcons.ts
 
 // 首先定义接口
-export interface PostureIconConfig {
-  type: "svg" | "default";
-  iconPath?: string;
-  size: number;
-  showLabel: boolean;
-}
+import type { 
+	PostureIconConfig, 
+	PersonPosture,
+	POSTURE_LABELS
+   } from '../stores/types';
+
+   
+
 
 // 批量导入所有SVG
 const icons = import.meta.glob("@/assets/icons/*.svg", { eager: true });
@@ -23,185 +25,141 @@ const iconMap = Object.entries(icons).reduce(
   {} as Record<string, string>,
 );
 
+
+
+
 export const POSTURE_CONFIGS: Record<number, PostureIconConfig> = {
-  0: {
-    // Init
-    type: "svg",
-    iconPath: iconMap["Init"],
-    size: 43,
-    showLabel: true,
-  },
-  1: {
-    // Walking
-    type: "svg",
-    iconPath: iconMap["Walking"],
-    size: 43,
-    showLabel: true,
-  },
-  2: {
-    // FallSuspect
-    type: "svg",
-    iconPath: iconMap["FallSuspect"],
-    size: 43,
-    showLabel: true,
-  },
-  3: {
-    // Sitting
-    type: "svg",
-    iconPath: iconMap["Sitting"],
-    size: 43,
-    showLabel: false,
-  },
-  4: {
-    // LyingBed
-    type: "svg",
-    iconPath: iconMap["LyingBed"],
-    size: 43,
-    showLabel: false,
-  },
-  5: {
-    // FallConfirm
-    type: "svg",
-    iconPath: iconMap["FallConfirm"],
-    size: 43,
-    showLabel: false,
-  },
-  6: {
-    // Lying
-    type: "svg",
-    iconPath: iconMap["Lying"],
-    size: 43,
-    showLabel: false,
-  },
-  7: {
-    // SitUp
-    type: "svg",
-    iconPath: iconMap["SitUp"],
-    size: 43,
-    showLabel: false,
-  },
-  8: {
-    // SitGroundConfirm
-    type: "svg",
-    iconPath: iconMap["SitGroundConfirm"],
-    size: 43,
-    showLabel: true,
-  },
-  9: {
-    // SitUpBed
-    type: "svg",
-    iconPath: iconMap["SitUpBed"],
-    size: 43,
-    showLabel: false,
-  },
-  10: {
-    // SitUpBedSuspect
-    type: "svg",
-    iconPath: iconMap["SitUpBedSuspect"],
-    size: 43,
-    showLabel: true,
-  },
-  11: {
-    // SitUpBedConfirm
-    type: "svg",
-    iconPath: iconMap["SitUpBedConfirm"],
-    size: 43,
-    showLabel: false,
-  },
-};
-
-export enum PersonPosture {
-  Init = 0, // 初始化
-  Walking = 1, // 行走
-  FallSuspect = 2, // 疑似跌倒
-  Sitting = 3, // 蹲坐
-  Standing = 4, // 站立
-  FallConfirm = 5, // 跌倒确认
-  Lying = 6, // 卧
-  SitGroundSuspect = 7, // 疑似坐地
-  SitGroundConfirm = 8, // 确认坐地
-  SitUpBed = 9, // 普通床上坐起
-  SitUpBedSuspect = 10, // 疑似床上坐起
-  SitUpBedConfirm = 11, // 确认床上坐起
-}
-
-export const POSTURE_LABELS: Record<number, string> = {
-  0: "Init",
-  1: "Walking",
-  2: "FallSuspect",
-  3: "Sitting",
-  4: "Standing",
-  5: "FallConfirm",
-  6: "Lying",
-  7: "SitGroundSuspect",
-  8: "SitGroundConfirm",
-  9: "SitUpBed",
-  10: "SitUpBedSuspect",
-  11: "SitUpBedConfirm",
-};
-/*
-export interface PostureIconConfig {
-	type: 'png' | 'default'  // 改为 png 或默认椭圆
-	imageUrl?: string       // PNG图片路径
-	size: number           // 统一43x43
-	showLabel: boolean
-  }
+	0: {
+	  // Init
+	  type: "svg",
+	  iconPath: iconMap["Init"],
+	  size: 43,
+	  showLabel: false,
+	},
+	1: {
+	  // Walking
+	  type: "svg",
+	  iconPath: iconMap["Walking"],
+	  size: 43,
+	  showLabel: false,
+	},
+	2: {
+	  // FallSuspect
+	  type: "svg",
+	  iconPath: iconMap["FallSuspect"],
+	  size: 43,
+	  showLabel: false,
+	},
+	3: {
+	  // Sitting
+	  type: "svg",
+	  iconPath: iconMap["Sitting"],
+	  size: 43,
+	  showLabel: false,
+	},
+	4: {
+	  // Standing
+	  type: "svg",
+	  iconPath: iconMap["Standing"],
+	  size: 43,
+	  showLabel: false,
+	},
+	5: {
+	  // FallConfirm
+	  type: "svg",
+	  iconPath: iconMap["FallConfirm"],
+	  size: 43,
+	  showLabel: false,
+	},
+	6: {
+	  // Lying
+	  type: "svg",
+	  iconPath: iconMap["LyingBed"],
+	  size: 43,
+	  showLabel: false,
+	},
+	7: {
+	  // SitGroundSuspect
+	  type: "svg",
+	  iconPath: iconMap["SitGroundSuspect"],
+	  size: 43,
+	  showLabel: false,
+	},
+	8: {
+	  // SitGroundConfirm
+	  type: "svg",
+	  iconPath: iconMap["SitGroundConfirm"],
+	  size: 43,
+	  showLabel: false,
+	},
+	9: {
+	  // SitUpBed
+	  type: "svg",
+	  iconPath: iconMap["SitUpBed"],
+	  size: 43,
+	  showLabel: false,
+	},
+	10: {
+	  // SitUpBedSuspect
+	  type: "svg",
+	  iconPath: iconMap["SitUpBedSuspect"],
+	  size: 43,
+	  showLabel: false,
+	},
+	11: {
+	  // SitUpBedConfirm
+	  type: "svg",
+	  iconPath: iconMap["SitUpBedConfirm"],
+	  size: 43,
+	  showLabel: false,
+	},
+  };
 
 
-  export const POSTURE_CONFIGS: Record<number, PostureIconConfig> = {
-	/*0: {  // Init
-	  type: 'default',
-	  size: 43,
-	  showLabel: true
+// 生理状态图标配置
+export const VITAL_SIGN_CONFIGS = {
+	heart: {
+	  undefined: { type: "svg" as const, iconPath: iconMap["heart-gray"], size: 24, showLabel: false },
+	  normal: { type: "svg" as const, iconPath: iconMap["heart-green"], size: 24, showLabel: false },
+	  warning: { type: "svg" as const, iconPath: iconMap["heart-yellow"], size: 24, showLabel: false },
+	  danger: { type: "svg" as const, iconPath: iconMap["heart-red"], size: 24, showLabel: false }
 	},
-	0: {  // Init
-	  type: 'png',
-	  imageUrl: '/src/assets/icons/Init.png',
-	  size: 43,
-	  showLabel: false
+	breathing: {
+	  undefined: { type: "svg" as const, iconPath: iconMap["breathe-gray"], size: 24, showLabel: false },
+	  normal: { type: "svg" as const, iconPath: iconMap["breathe-green"], size: 24, showLabel: false },
+	  warning: { type: "svg" as const, iconPath: iconMap["breathe-yellow"], size: 24, showLabel: false },
+	  danger: { type: "svg" as const, iconPath: iconMap["breathe-red"], size: 24, showLabel: false }
 	},
-	1: {  // Walking
-	  type: 'png',
-	  imageUrl: '/src/assets/icons/Walking.png',
-	  size: 43,
-	  showLabel: false
-	},
-	2: {  // FallSuspect
-	  type: 'png',
-	  imageUrl: '/src/assets/icons/FallSuspect.png',
-	  size: 43,
-	  showLabel: false
-	},
-	3: {  // Sitting
-		type: 'png',
-		imageUrl: '/src/assets/icons/Sitting.png',
-		size: 43,
-		showLabel: false
-	},
-	4: {  // LyingBed
-		type: 'png',
-		imageUrl: '/src/assets/icons/Init.png',
-		size: 43,
-		showLabel: false
-	},
-	5: {  // FallConfirm
-		type: 'png',
-		imageUrl: '/src/assets/icons/FallConfirm.png',
-		size: 43,
-		showLabel: false
-	},
-	6: {  // Lying
-		type: 'png',
-		imageUrl: '/src/assets/icons/Lying.png',
-		size: 43,
-		showLabel: false
-	},
-	7: {  // SitUp
-		type: 'png',
-		imageUrl: '/src/assets/icons/SitUp.png',
-		size: 43,
-		showLabel: false
+	sleep: {
+	  undefined: { type: "svg" as const, iconPath: iconMap["AwakeUnknow"], size: 24, showLabel: false },
+	  light: { type: "svg" as const, iconPath: iconMap["LightSleep"], size: 24, showLabel: false },
+	  deep: { type: "svg" as const, iconPath: iconMap["DeepSleep"], size: 24, showLabel: false },
+	  awake: { type: "svg" as const, iconPath: iconMap["Awake"], size: 24, showLabel: false }
 	}
-  }
+   } as const;
 
-  */
+
+// 导出状态判断函数
+export const getHeartRateStatus = (rate: number) => {
+	if (rate === undefined || rate === null || isNaN(rate)) return 'undefined';
+	if (rate >= 60 && rate <= 95) return 'normal';
+	if ((rate >= 45 && rate <= 59) || (rate >= 96 && rate <= 105)) return 'warning';
+	return 'danger';
+   };
+   
+   export const getBreathingStatus = (rate: number) => {
+	if (rate === undefined || rate === null || isNaN(rate)) return 'undefined';
+	if (rate >= 12 && rate <= 26) return 'normal';
+	if ((rate >= 8 && rate <= 11) || (rate >= 21 && rate <= 26)) return 'warning';
+	return 'danger';
+   };
+   
+   export const getSleepStatus = (state: number) => {
+	if (state === undefined || state === null) return 'undefined';
+	switch (state >> 6) {
+	  case 1: return 'light';
+	  case 2: return 'deep';
+	  case 3: return 'awake';
+	  default: return 'undefined';
+	}
+   };

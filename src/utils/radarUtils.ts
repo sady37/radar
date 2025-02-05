@@ -40,17 +40,17 @@ export function getRadarBoundaryVertices(radar: ObjectProperties): RadarBoundary
 
   if (mode === 'ceiling') {
     return {
-		v1: { h:-boundary.rightH , v: -boundary.rearV },   // minH,minV -300,-200
-		v2: { h:boundary.leftH , v: -boundary.rearV },      // minV,sec min H 300，-200
-		v3: { h: boundary.rightH, v: boundary.frontV },     //  minH,sec minV -300，200
-		v4: { h: -boundary.rightH, v: boundary.frontV }    // 
+      v1: { h: -boundary.rightH, v: -boundary.rearV }, // minH,minV -300,-200
+      v2: { h: boundary.leftH, v: -boundary.rearV }, // minV,sec min H 300，-200
+      v3: { h: boundary.rightH, v: boundary.frontV }, // minH,sec minV -300，200
+      v4: { h: -boundary.rightH, v: boundary.frontV } //
     };
   } else {
     return {
-		v1: { h:-boundary.rightH , v: 0 },   // minH,minV -300,0
-		v2: { h:boundary.leftH , v: 0 },      //minV,sec min H   300,0
-		v3: { h: boundary.rightH, v: boundary.frontV },     //  minH,sec minV -300,400
-		v4: { h: -boundary.rightH, v: boundary.frontV }    // sec minV   300,400
+      v1: { h: -boundary.rightH, v: 0 }, // minH,minV -300,0
+      v2: { h: boundary.leftH, v: 0 }, //minV,sec min H   300,0
+      v3: { h: boundary.rightH, v: boundary.frontV }, // minH,sec minV -300,400
+      v4: { h: -boundary.rightH, v: boundary.frontV } // sec minV   300,400
     };
   }
 }
@@ -103,43 +103,43 @@ export function getObjectVertices(obj: ObjectProperties, radar: ObjectProperties
 	
 	// 4. 计算物体四个顶点（考虑物体自身旋转和雷达旋转）
 	const points = [
-	  // 先计算物体自身坐标系中的四个点
-	  { h: -halfLength, v: -halfWidth },  // 左上
-	  { h: halfLength, v: -halfWidth },   // 右上
-	  { h: -halfLength, v: halfWidth },   // 左下
-	  { h: halfLength, v: halfWidth }     // 右下
-	].map(p => {
-	  // 将每个点按物体旋转角度旋转
-	  const rotatedH = p.h * Math.cos(objRad) - p.v * Math.sin(objRad);
-	  const rotatedV = p.h * Math.sin(objRad) + p.v * Math.cos(objRad);
-	  // 加上物体中心点位置得到最终坐标
-	  return {
-		h: radarPos.h + rotatedH,
-		v: radarPos.v + rotatedV
-	  };
-	});
-  
-	  // 5. 修改排序规则 - 按雷达坐标系规则: 
-	  	//v1：优先找最小的 h，若 h 相同则找最小的 v。
-		//v2：优先找最小的 v，若 v 相同则找次小的 h。
-		//v3：最小的 h 中次小的 v。
-		//v4：剩下的那个点
- // 5. 按规则排序并取整到10的倍数
- const roundToTen = (num: number) => Math.round(num / 10) * 10;
+    // 先计算物体自身坐标系中的四个点
+    { h: -halfLength, v: -halfWidth }, // 左上
+    { h: halfLength, v: -halfWidth }, // 右上
+    { h: -halfLength, v: halfWidth }, // 左下
+    { h: halfLength, v: halfWidth } // 右下
+  ].map(p => {
+    // 将每个点按物体旋转角度旋转
+    const rotatedH = p.h * Math.cos(objRad) - p.v * Math.sin(objRad);
+    const rotatedV = p.h * Math.sin(objRad) + p.v * Math.cos(objRad);
+    // 加上物体中心点位置得到最终坐标
+    return {
+      h: radarPos.h + rotatedH,
+      v: radarPos.v + rotatedV
+    };
+  });
 
- // 先取所有点的副本并排序
- const sortedPoints = [...points].sort((a, b) => {
-   if (Math.abs(a.h - b.h) > 0.1) {
-     return a.h - b.h;  // h小的在前（minH优先）
-   }
-   return a.v - b.v;    // h相同时v小的在前（minV优先）
- });
+  // 5. 修改排序规则 - 按雷达坐标系规则:
+  //v1：优先找最小的 h，若 h 相同则找最小的 v。
+  //v2：优先找最小的 v，若 v 相同则找次小的 h。
+  //v3：最小的 h 中次小的 v。
+  //v4：剩下的那个点
+  // 5. 按规则排序并取整到10的倍数
+  const roundToTen = (num: number) => Math.round(num / 10) * 10;
 
- // 将结果四舍五入到10的倍数
- return sortedPoints.map(p => ({
-   h: roundToTen(p.h),
-   v: roundToTen(p.v)
- }));
+  // 先取所有点的副本并排序
+  const sortedPoints = [...points].sort((a, b) => {
+    if (Math.abs(a.h - b.h) > 0.1) {
+      return a.h - b.h; // h小的在前（minH优先）
+    }
+    return a.v - b.v; // h相同时v小的在前（minV优先）
+  });
+
+  // 将结果四舍五入到10的倍数
+  return sortedPoints.map(p => ({
+    h: roundToTen(p.h),
+    v: roundToTen(p.v)
+  }));
 }
 
 
@@ -192,5 +192,38 @@ export function generateRadarReport(radar: ObjectProperties | null, objects: Obj
 	  },
 	  boundaryVertices: getRadarBoundaryVertices(radar),
 	  objects: objectsInBoundary
+	};
+  }
+
+
+  export function toRadarCoordinate(canvasX: number, canvasY: number, radar: ObjectProperties): RadarPoint {
+	// 计算相对于雷达中心的偏移
+	const dx = canvasX - radar.position.x;
+	const dy = canvasY - radar.position.y;
+	
+	// 考虑雷达旋转角度（弧度）
+	const radarRotation = (radar.rotation * Math.PI) / 180;
+	
+	// 应用旋转变换
+	const rotatedH = -(dx * Math.cos(radarRotation) + dy * Math.sin(radarRotation));
+	const rotatedV = -dx * Math.sin(radarRotation) + dy * Math.cos(radarRotation);
+	
+	return {
+	  h: rotatedH,  // 雷达坐标系：左正右负
+	  v: rotatedV   // 雷达坐标系：下正上负
+	};
+  }
+  
+  export function toCanvasCoordinate(radarPoint: RadarPoint, radar: ObjectProperties): Point {
+	// 雷达旋转角度（弧度）
+	const radarRotation = (radar.rotation * Math.PI) / 180;
+	
+	// 反向应用旋转变换
+	const dx = -(radarPoint.h * Math.cos(-radarRotation) + radarPoint.v * Math.sin(-radarRotation));
+	const dy = -radarPoint.h * Math.sin(-radarRotation) + radarPoint.v * Math.cos(-radarRotation);
+	
+	return {
+	  x: radar.position.x + dx,
+	  y: radar.position.y + dy
 	};
   }
