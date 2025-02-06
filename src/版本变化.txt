@@ -12,15 +12,18 @@ SCSS (dart-sass)    预处理样式，提升 UI 设计灵活性
 ✅ 工具栏、编辑菜单均符合 Vue 组件结构化开发
 
 src/
-├── components/
+├── assets/
+│   └── icons/            # 各类姿态及图标
+│  		├── Awake.png     
+│       └── Awake.svg      
+├── config/
+│   └── test-layout.json    #测试所用layout 
+│  
 ├── components/
 │   ├── common/              # 保留但目前为空
-│   ├── monitoring/          # 监控相关组件
-│   │   ├── PostureIndicator.vue  #人体姿态：
-│   │   ├── TrajectoryLine.vue  #移动物体轨迹线，本项目暂不实现
-│   │   └── VitalsDisplay.vue  #人的生理指标显示
 │   ├── RadarCanvas.vue     # 主画布组件
 │   └── RadarToolbar.vue    # 工具栏组件
+│ 
 ├── stores/                 # 状态管理
 │   ├── canvas.ts           #画布设置，width,Hight
 │   ├── mouse.ts            #mouse相关
@@ -35,6 +38,10 @@ src/
 	├── drawPosture.ts     # 人体绘制主函数(包含姿态图标和默认椭圆)
 	├── mockRadarData.ts   # 模拟人体数据生成         
 	└── trajectoryUtils.ts # 绘制运动物体轨迹
+
+
+
+
 
 
 当前已完成画布、toolbar等组件，画布坐标、对象创建、移动、旋转、改变大小，雷达模型绘制；人体模板、人体模拟数据框架已完成，但未应用。
@@ -464,3 +471,5 @@ object.ts仍保持不变。
 ###3.4.2
     增加mock模拟，增加生理指示板，增加雷达->画布的坐标转换
 	优化了一些UI，但模拟产生的坐标不对
+###3.4.3
+    优化mockRadaData 逻辑，生成mockRadarData服务，可直接调用config/test_layout.josn布局来生成测试数据

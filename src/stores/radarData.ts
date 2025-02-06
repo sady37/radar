@@ -13,18 +13,20 @@ export const useRadarDataStore = defineStore("radarData", {
 
   actions: {
     startDataStream() {
+		console.log('Starting data stream...');
       this.mockService.startMockDataStream(
         (personsData) => {
           this.currentPersons = personsData;
         },
         (vitalData) => {
+			console.log('Vital data:', vitalData);
           this.currentVital = vitalData;
         },
       );
     },
 
     stopDataStream() {
-      this.mockService.stopMockDataStream();
+      this.mockService.stopDataStream();
     },
 
     updatePersonsData(data: PersonData[]) {

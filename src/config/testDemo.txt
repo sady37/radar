@@ -1,12 +1,44 @@
-room201:（-100，200),L350,W500
-radar:default ceiling,show boundary on,(-100,200) 
-bed:L190,w140, (-100,200)
-TV:L120,W200,(120,200)
-desk:L50,W150,(-170,320)
-door:L90,w30, (80,480)
+test_layout.json中 object如下：
+room201:(-200，0),(-200,500),(150,0),(150,500)
+radar:(-100,200),ceiling model,boundary(LeftH300,rightH300,frontV200,backV100),rotate=+90,即Front是X+
+bed:(-100,200),L190,w140
+TV:(120,200),L120,W200
+desk:(-170,320),L50,W150
+door:(80,480),L90,w30
 person:1
-活动范围：房间内，除去desk/TV，姿态只能1-7
-但bed区域只能6-11项，且可有生理指标。
+
+** 画布坐标系规则：
+ *- 原点在画布顶部中心 
+ *- x轴：向右为负(-),向左为正(+)
+ *- y轴：向下为正(+),向上为负(-) 
+ *  计算物体相对于雷达坐标系的顶点坐标
+  * 雷达坐标系规则：
+ * - 原点在雷达中心 (0,0)
+ * - H轴：向左为正(+)，向右为负(-)
+ * - V轴：向下为正(+)，向上为负(-)
+
+当雷达旋转后，坐标系跟随旋转，顶点定义规则保持不变.
+test_layout.json例中，雷达有逆时针转90，rotation=+90，即V+=X+
+
+活动范围及要求：
+1.只能房间内，desk/TV不能存在人，
+2.Bed上只能6-11项，且可用生理指标，
+3.其他地方，姿态只能1-7
+4.每种姿态需保持5-10秒，床上需8-15秒
+6.以上每种姿态及各处生理指标中的，undefined,normal,warning,danger均需测试到。
+
+1.仅当人在Bed区域内时才有:Lying,9:SitUpBed,10:SitUpBedSuspect,11:SitUpBedConfirm项；只有在床上，且姿态为6:lying时有生理指标
+2.其它区域不能6，9，10，11项，也不能含有生理指标
+danger 30%, warning 30%, normal 10%,undefined 10%
+
+mockRadarData 采用雷达作标，原生成逻辑见 mockRadarData.ts
+types.ts：雷达、物体等objectProperties  
+objects.ts: 雷达、固定物体(不含person) store 的状态接口
+radarData.ts:雷达的数据格式
+radarutils.ts:雷达自身boundary及坐标转换的计算方法
+生理指标见utils/postureIcons.ts const VITAL_SIGN_CONFIGS  或 types.ts
+
+姿态见types.ts 或如下enum PersonPosture
 	0: "Init",
 	1: "Walking",
 	2: "FallSuspect",
@@ -20,6 +52,26 @@ person:1
 	10: "SitUpBedSuspect",  // 疑似床上坐起,monitorBed
 	11: "SitUpBedConfirm", // 确认床上坐起,monitorBed
 
+
+ MockRadarService 的完整实现：
+引入和配置部分：
+UntitledClick to open code
+坐标转换类：
+UntitledClick to open code
+区域划分类：
+UntitledClick to open code
+姿态和生理指标类：
+UntitledClick to open code
+主要逻辑部分：
+UntitledClick to open code
+数据流控制部分：
+UntitledClick to open code每个部分都有清晰的注释分隔，需要修改某个部分时只需替换相应段落。要测试某个特定部分
+
+坐标转换类：
+1.将test_layout.json 中画布坐标转换为雷达坐标，转换时需考虑此时雷达的旋转，+90，
+2. 使用雷达的视角，找出1-6姿态的区域，7-11床的范围，
+3. 将生成的雷达坐标数据再转换为画布数据，与最初给的各物体坐标区域有没有冲突，确保转换正确。
+4. 转换正确后再去做各种姿态、生理呀的概率分布
 
 "rgb(240, 230, 140)" : "rgb(173, 216, 230)";rgb(239, 250, 152)  rgb(121, 120, 120)
 exclude

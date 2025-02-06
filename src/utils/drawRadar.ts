@@ -80,24 +80,24 @@ function drawLEDIndicator(
 ) {
   const indicatorY = mode === "ceiling" ? 17 : -17;
 
-  // LED指示器
-  ctx.beginPath();
-  ctx.fillStyle = "rgb(72, 187, 120)";
-  ctx.strokeStyle = "rgb(47, 133, 90)";
-  ctx.lineWidth = 0.5;
-  //-10，与中圆r相等
-  ctx.rect(-10 * scale, (indicatorY - 3) * scale, 20 * scale, 6 * scale);
-  ctx.fill();
-  ctx.stroke();
+// LED指示器
+ctx.beginPath();
+ctx.fillStyle = "rgb(116, 199, 151)";
+ctx.strokeStyle = "rgb(47, 133, 90)";
+ctx.lineWidth = 0.5;
+//-10，与中圆r相等
+ctx.rect(-5 * scale, (indicatorY - 0.5) * scale, 5 * scale, 1.5 * scale);
+ctx.fill();
+ctx.stroke();
 
-  // 模式标识
-  ctx.fillStyle = "rgb(26, 32, 44)";
-  ctx.font = `bold ${14 * scale}px sans-serif`;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  const textY =
-    mode === "ceiling" ? (indicatorY + 15) * scale : (indicatorY - 8) * scale;
-  ctx.fillText(mode === "ceiling" ? "C" : "W", 0, textY);
+// 模式标识
+ctx.fillStyle = "rgb(74, 85, 104)";
+ctx.font = `${8 * scale}px Arial`;
+ctx.textAlign = "center";
+ctx.textBaseline = "middle";
+const textY =
+	mode === "ceiling" ? (indicatorY + 8) * scale : (indicatorY - 8) * scale;
+ctx.fillText(mode === "ceiling" ? "C" : "W", 0, textY);
 }
 
 

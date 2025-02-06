@@ -74,7 +74,7 @@ export const POSTURE_CONFIGS: Record<number, PostureIconConfig> = {
 	6: {
 	  // Lying
 	  type: "svg",
-	  iconPath: iconMap["LyingBed-back"],
+	  iconPath: iconMap["LyingBed-black"],
 	  size: 50,
 	  showLabel: false,
 	},

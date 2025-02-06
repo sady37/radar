@@ -38,10 +38,6 @@ export class MockRadarService {
  private vitalTimer: number | null = null;
  private vital: VitalSignData | null = null;
  private movementState: MovementState | null = null;
- private lastPostureChangeTime = Date.now(); // 上次姿态变化的时间
- private currentPosture: number | null = null; // 当前姿态
- private postureDuration = 0; // 姿态持续时间，单位秒
- private bedPostureDuration = 0; // 床上姿态的特定持续时间，单位秒
 
  constructor(config: RadarServiceConfig = {}) {
    // 处理雷达模式
@@ -137,40 +133,19 @@ export class MockRadarService {
 
   // ================ 行为生成系统 ================
   private behaviorSystem = {
-  // 作为 behaviorSystem 的一个方法
-  weightedRandomPosture(postures: {posture: number, weight: number}[]): number {
-    const totalWeight = postures.reduce((sum, item) => sum + item.weight, 0);
-    let random = Math.random() * totalWeight;
-    
-    for (const item of postures) {
-      random -= item.weight;
-      if (random <= 0) {
-        return item.posture;
+    generatePosture: (inBed: boolean): number => {
+      if (inBed) {
+        return Math.random() < 0.6 ? PersonPosture.Lying : 
+               Math.random() < 0.7 ? PersonPosture.SitUpBed : 
+               Math.random() < 0.5 ? PersonPosture.SitUpBedSuspect : 
+               PersonPosture.SitUpBedConfirm;
       }
-    }
-    return postures[0].posture;
-  },
-
-  generatePosture(inBed: boolean): number {
-    if (inBed) {
-      const bedPostures = [
-        {posture: PersonPosture.Lying, weight: 40},
-        {posture: PersonPosture.SitUpBed, weight: 30},
-        {posture: PersonPosture.SitUpBedSuspect, weight: 15},
-        {posture: PersonPosture.SitUpBedConfirm, weight: 15}
-      ];
-      return this.weightedRandomPosture(bedPostures);  // 使用 this 调用
-    } else {
-      const roomPostures = [
-        {posture: PersonPosture.Walking, weight: 40},
-        {posture: PersonPosture.FallSuspect, weight: 20},
-        {posture: PersonPosture.Sitting, weight: 20},
-        {posture: PersonPosture.Standing, weight: 15},
-        {posture: PersonPosture.FallConfirm, weight: 5}
-      ];
-      return this.weightedRandomPosture(roomPostures);  // 使用 this 调用
-    }
-  },
+      return Math.random() < 0.4 ? PersonPosture.Walking :
+             Math.random() < 0.6 ? PersonPosture.Standing :
+             Math.random() < 0.7 ? PersonPosture.Sitting :
+             Math.random() < 0.5 ? PersonPosture.FallSuspect :
+             PersonPosture.Lying;
+    },
 
     generateVitalState: (): string => {
       const rand = Math.random();
@@ -220,7 +195,6 @@ export class MockRadarService {
   };
 
   // ================ 主要逻辑部分 ================
- /* 
   generateMockTrackData(): PersonData[] {
     if (!this.roomLayout?.radar) throw new Error('Radar not initialized');
     const radar = this.roomLayout.radar;
@@ -242,7 +216,7 @@ export class MockRadarService {
       areaId: 0
     };
 
-    if (inBed && personData.posture == PersonPosture.Lying) {
+    if (inBed && personData.posture >= PersonPosture.SitGroundSuspect) {
       const vitalState = this.behaviorSystem.generateVitalState();
       this.vital = this.behaviorSystem.generateVitalData(vitalState);
     } else {
@@ -251,51 +225,6 @@ export class MockRadarService {
 
     return [personData];
   }
-  */
-  generateMockTrackData(): PersonData[] {
-	const currentTime = Date.now();
-	if (!this.roomLayout?.radar) throw new Error('Radar not initialized');
-	const radar = this.roomLayout.radar;
-
-	const position = this.coordSystem.getValidPosition(radar);
-	const canvasPos = toCanvasCoordinate(position, radar);
-	const inBed = this.areaSystem.isInBedArea(position, radar);
-
-	let posture = this.currentPosture;
-	if (posture === null || 
-		(currentTime - this.lastPostureChangeTime) >= ((inBed ? this.bedPostureDuration : this.postureDuration) * 1000)) {
-		// 更新姿态
-		posture = this.behaviorSystem.generatePosture(inBed);
-		this.currentPosture = posture;
-		this.lastPostureChangeTime = currentTime;
-
-		// 设置不同的持续时间（毫秒）
-		this.postureDuration = Math.floor(Math.random() * 4 + 5); // 5-8秒
-		this.bedPostureDuration = Math.floor(Math.random() * 3 + 8); // 8-10秒
-	}
-
-	const personData: PersonData = {
-		id: 1,
-		position: {
-			x: canvasPos.x,
-			y: canvasPos.y,
-			z: Math.floor(Math.random() * 200 + 50)
-		},
-		remainTime: 30,
-		posture: this.behaviorSystem.generatePosture(inBed),
-		event: 0,
-		areaId: 0
-	};
-
-	if (inBed && personData.posture === PersonPosture.Lying) {  // 严格等于Lying
-		const vitalState = this.behaviorSystem.generateVitalState();
-		this.vital = this.behaviorSystem.generateVitalData(vitalState);
-	  } else {
-		this.vital = null;
-	  }
-
-	return [personData];
-}
 
   // ================ 数据流控制部分 ================
   startMockDataStream(

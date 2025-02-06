@@ -299,7 +299,7 @@ const objectsStore = useObjectsStore();
 const mouseStore = useMouseStore();
 const canvasStore = useCanvasStore();
 
-// mock test
+// mock test  
 const radarDataStore = useRadarDataStore();
 const isTesting = ref(false);
 
@@ -757,7 +757,12 @@ interface SavedRoom {
 
 // 保存按钮处理函数
 const saveRoom = () => {
- const data = JSON.stringify({ objects: objectsStore.objects });
+ const data = JSON.stringify({ objects: objectsStore.objects ,
+	compilerOptions: {
+      resolveJsonModule: true,
+      esModuleInterop: true
+    }
+ });
  const blob = new Blob([data], { type: 'application/json' });
  const url = URL.createObjectURL(blob);
  const a = document.createElement('a');

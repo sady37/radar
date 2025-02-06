@@ -87,3 +87,5 @@ src/
 ###3.4.2
     增加mock模拟，增加生理指示板，增加雷达->画布的坐标转换
 	优化了一些UI，但模拟产生的坐标不对
+###3.4.3
+    优化mockRadaData 逻辑，生成mockRadarData服务，可直接调用config/test_layout.josn布局来生成测试数据
