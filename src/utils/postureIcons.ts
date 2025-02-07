@@ -163,3 +163,15 @@ export const getHeartRateStatus = (rate: number) => {
 	  default: return 'undefined';
 	}
    };
+
+   export const getPostureLevel = (posture: number) => {
+	// L1 级别
+	if (posture === 5 || posture === 11) { // FallConfirm, SitUpBedConfirm
+	  return 'danger';
+	}
+	// L2 级别
+	if (posture === 2 || posture === 10) { // FallSuspect, SitUpBedSuspect
+	  return 'warning';
+	}
+	return 'normal';
+  };

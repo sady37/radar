@@ -200,34 +200,28 @@ export function generateRadarReport(radar: ObjectProperties | null, objects: Obj
   }
 
 
-  export function toRadarCoordinate(canvasX: number, canvasY: number, radar: ObjectProperties): RadarPoint {
-	// 计算相对于雷达中心的偏移
-	const dx = canvasX - radar.position.x;
-	const dy = canvasY - radar.position.y;
-	
-	// 考虑雷达旋转角度（弧度）
-	const radarRotation = (radar.rotation * Math.PI) / 180;
-	
-	// 应用旋转变换
-	const rotatedH = -(dx * Math.cos(radarRotation) + dy * Math.sin(radarRotation));
-	const rotatedV = -dx * Math.sin(radarRotation) + dy * Math.cos(radarRotation);
-	
-	return {
-	  h: rotatedH,  // 雷达坐标系：左正右负
-	  v: rotatedV   // 雷达坐标系：下正上负
-	};
-  }
-  
   export function toCanvasCoordinate(radarPoint: RadarPoint, radar: ObjectProperties): Point {
-	// 雷达旋转角度（弧度）
-	const radarRotation = (radar.rotation * Math.PI) / 180;
-	
-	// 反向应用旋转变换
-	const dx = -(radarPoint.h * Math.cos(-radarRotation) + radarPoint.v * Math.sin(-radarRotation));
-	const dy = -radarPoint.h * Math.sin(-radarRotation) + radarPoint.v * Math.cos(-radarRotation);
-	
-	return {
-	  x: radar.position.x + dx,
-	  y: radar.position.y + dy
-	};
-  }
+    const rad = (radar.rotation * Math.PI) / 180;
+    // 先旋转
+    const rotated = {
+        x: radarPoint.h * Math.cos(rad) - radarPoint.v * Math.sin(rad),
+        y: radarPoint.h * Math.sin(rad) + radarPoint.v * Math.cos(rad)
+    };
+    // 再平移
+    return {
+        x: radar.position.x + rotated.x,
+        y: radar.position.y + rotated.y
+    };
+}
+
+export function toRadarCoordinate(canvasX: number, canvasY: number, radar: ObjectProperties): RadarPoint {
+    // 先平移到原点
+    const dx = canvasX - radar.position.x;
+    const dy = canvasY - radar.position.y;
+    // 再反向旋转
+    const rad = (-radar.rotation * Math.PI) / 180;
+    return {
+        h: dx * Math.cos(rad) - dy * Math.sin(rad),
+        v: dx * Math.sin(rad) + dy * Math.cos(rad)
+    };
+}

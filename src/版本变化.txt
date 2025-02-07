@@ -28,7 +28,7 @@ src/
 │   ├── canvas.ts           #画布设置，width,Hight
 │   ├── mouse.ts            #mouse相关
 │   ├── objects.ts          #最初的各对像数据
-│   ├── radarData.ts        # 存放真实雷达传送过的多人的数据:坐标、姿态、生理指标等
+│   ├── radarData.ts        # 存放真实雷达传送过的多人的数据:坐标、姿态、生理指标,警报等
 │   └── types.ts            #对象属性定义
 │
 └── utils/                 # 工具函数

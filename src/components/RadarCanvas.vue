@@ -37,6 +37,8 @@ import { VITAL_SIGN_CONFIGS,getHeartRateStatus,getBreathingStatus, getSleepStatu
 //import { drawTrajectory } from '../utils/trajectoryUtils';
 import { generateRadarReport,toCanvasCoordinate  } from "../utils/radarUtils";
 
+
+
 // 2. 组件状态定义
 const canvasRef = ref<HTMLCanvasElement | null>(null);
 const scale = ref(1.0);
@@ -571,6 +573,7 @@ const drawObject = (ctx: CanvasRenderingContext2D, obj: ObjectProperties) => {
   ctx.restore();
 };
 
+
 const drawStatusPanel = (ctx: CanvasRenderingContext2D) => {
   const vital = radarDataStore.currentVital;
   if (!vital) return;
@@ -617,7 +620,6 @@ const drawStatusPanel = (ctx: CanvasRenderingContext2D) => {
   );
 
   // 睡眠状态
-  // 睡眠状态
   const sleepStatus = getSleepStatus(vital?.sleepState);
   drawIconAndText(
     VITAL_SIGN_CONFIGS.sleep[sleepStatus], 
@@ -627,6 +629,7 @@ const drawStatusPanel = (ctx: CanvasRenderingContext2D) => {
   ctx.restore();
 };
 
+
 const drawPersons = (ctx: CanvasRenderingContext2D) => {
   const persons = radarDataStore.currentPersons;
 
@@ -635,8 +638,8 @@ const drawPersons = (ctx: CanvasRenderingContext2D) => {
   persons.forEach((person) => {
     if (person.id === 88) return; // 跳过无人标记
 
-	const canvasX = canvasStore.width / 2 + person.position.x * scale.value;
-    const canvasY = person.position.y * scale.value;
+	//const canvasX = canvasStore.width / 2 + person.position.x * scale.value;
+    //const canvasY = person.position.y * scale.value;
     
   const radar = objectsStore.objects.find((obj) => obj.typeName === "Radar");
   const canvasPos = radar ? toCanvasCoordinate(  { h: person.position.x, v: person.position.y },  radar) : { x: 0, y: 0 };

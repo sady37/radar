@@ -5,6 +5,11 @@ export interface Point {
 	y: number;
   }
 
+  export interface RadarPoint {
+	h: number;
+	v: number;
+  }
+
 export interface ObjectProperties {
     // 基础属性(所有对象必需)
 	typeValue: number;    // 类型值(1-Other, 2-bed等)
@@ -60,7 +65,9 @@ export interface ObjectProperties {
 	borderOnly?: boolean;   // Other
 }
 
-
+export interface RobjectProperties extends Omit<ObjectProperties, 'position'> {
+	position: RadarPoint;
+  }
 
 // 人员数据接口
 export interface PersonData {
