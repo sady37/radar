@@ -1,291 +1,264 @@
 # src/components/RadarToolbar.vue
 ###########////1 完整的template部分
 <template>
-  <div class="radar-toolbar">
-    <!-- 对象模板区 -->
-    <div class="template-area">
-      <div class="template-buttons">
-        <button
-          v-for="obj in objectTypes"
-          :key="obj.typeName"
-          :class="[
-            'template-btn',
-            obj.typeName.toLowerCase(),
-            { active: selectedType === obj.typeName },
-          ]"
-          @click="selectObjectType(obj.typeName)"
-        >
-          <template v-if="obj.typeName === 'Radar'">
-            <div class="radar-icon">
-              <div class="radar-circle"></div>
-              <div class="direction-point"></div>
-            </div>
-          </template>
-          <template v-else-if="obj.typeName === 'Moving'">
-            <div class="m-icon">Moving</div>
-          </template>
-          <template v-else>
-            {{ obj.label }}   
-          </template>
-        </button>
-      </div>
-
-      <div class="action-buttons">
-		<button class="action-btn create-btn" @click="createObject" :disabled="editMode !== 'template'">Create</button>
-  		<!--<button class="action-btn set-btn" @click="updateObject" :disabled="editMode !== 'object'">Set</button> -->
-  		<button class="action-btn delete-btn" @click="deleteObject" :disabled="editMode !== 'object'">Delete</button>
-		<button class="action-btn test-btn" :class="{ 'active': isTesting }" @click="toggleTest">Test</button> 
-		<!-- 新增 import/export 按钮行 -->
-		<button class="layout-btn saveRoom-btn" @click="saveRoom">saveRm</button>
-    	<button class="layout-btn loadRoom-btn" type="button" @click="loadRoom($event)">loadRm</button>
-	 </div>
-    </div>
-
-    <!-- 对象属性区 -->
-	<div class="property-area">
-	    <div class="name-row">
-			<span>Name</span>
-	        <input type="text" v-model="objectName" placeholder="Name" class="name-input"  />
-			<!-- <button class="test-btn" :class="{ 'active': isTesting }" @click="toggleTest">Test</button> -->
-	    </div>
-
-	    <div
-	        class="size-row"
-	        v-if="['Door', 'Bed', 'Exclude', 'Other', 'Wall', 'TV'].includes(selectedType)"
-	    >
-	        <div class="input-group">
-	            <span>L:</span>
-	            <input
+	<div class="radar-toolbar">
+	  <!-- 对象模板区 -->
+	  <div class="template-area">
+		<div class="template-buttons">
+		  <button
+			v-for="obj in objectTypes"
+			:key="obj.typeName"
+			:class="[
+			  'template-btn',
+			  obj.typeName.toLowerCase(),
+			  { active: selectedType === obj.typeName },
+			]"
+			@click="selectObjectType(obj.typeName)"
+			:title="obj.typeName"
+			:aria-label="obj.typeName"
+		  >
+			<template v-if="obj.typeName === 'Radar'">
+			  <div class="radar-icon" aria-hidden="true">
+				<div class="radar-circle"></div>
+				<div class="direction-point"></div>
+			  </div>
+			  <span class="visually-hidden">Radar</span>
+			</template>
+			<template v-else-if="obj.typeName === 'Moving'">
+			  <div class="m-icon">Moving</div>
+			</template>
+			<template v-else>
+			  {{ obj.label }}   
+			</template>
+		  </button>
+		</div>
+  
+		<div class="action-buttons">
+		  <button class="action-btn create-btn" @click="createObject" :disabled="editMode !== 'template'">Create</button>
+		  <button class="action-btn delete-btn" @click="deleteObject" :disabled="editMode !== 'object'">Delete</button>
+		  <button class="action-btn test-btn" :class="{ 'active': isTesting }" @click="toggleTest">Test</button>
+		  <button class="layout-btn saveRoom-btn" @click="saveRoom">saveRm</button>
+		  <button class="layout-btn loadRoom-btn" type="button" @click="loadRoom($event)">loadRm</button>
+		</div>
+	  </div>
+  
+	  <!-- 对象属性区 -->
+	  <div class="property-area">
+		<div class="name-row">
+		  <span>Name</span>
+		  <input type="text" v-model="objectName" placeholder="Name" class="name-input" />
+		</div>
+  
+		<div
+		  class="size-row"
+		  v-if="['Door', 'Bed', 'Exclude', 'Other', 'Wall', 'TV'].includes(selectedType)"
+		>
+		  <div class="input-group">
+			<span>L:</span>
+			<input
+			  type="number"
+			  v-model.number="properties.length"
+			  min="10"
+			  max="700"
+			  step="10"
+			  @change="validateLength"
+			  @blur="validateLength"
+			  aria-label="Length"
+			/>
+		  </div>
+		  <div class="input-group">
+			<span>W:</span>
+			<input
+			  type="number"
+			  v-model.number="properties.width"
+			  min="10"
+			  max="700"
+			  step="10"
+			  @change="validateWidth"
+			  @blur="validateWidth"
+			  aria-label="Width"
+			/>
+		  </div>
+		</div>
+  
+		<div class="specific-props" v-if="selectedType === 'Radar'">
+		  <div class="mode-select">
+			<label>
+			  <input type="radio" v-model="properties.mode" value="ceiling" />
+			  Ceiling
+			</label>
+			<label>
+			  <input type="radio" v-model="properties.mode" value="wall" />
+			  Wall
+			</label>
+		  </div>
+  
+		  <div class="height-input">
+			<div class="input-group">
+			  <span>H:</span>
+			  <input
+				type="number"
+				v-model.number="currentModeConfig.height.default"
+				min="0"
+				max="330"
+				step="10"
+				@change="validateHeight"
+				@blur="validateHeight"
+				aria-label="Height"
+			  />
+			  <span class="accuracy">150~330cm</span>
+			</div>
+		  </div>
+  
+		  <div class="boundary-settings">
+			<div class="boundary-row">
+			  <div class="input-group">
+				<span>Le:</span>
+				<input
 				  type="number"
-				  v-model.number="properties.length"
-				  min="10"
-				  max="700"
+				  v-model="currentModeConfig.boundary.leftH"
+				  min="0"
+				  max="300"
 				  step="10"
-				  @change="validateLength"
-				  @blur="validateLength"
-	            />
-	        </div>
-	        <div class="input-group">
-	            <span>W:</span>
-	            <input
+				  @change="validateBoundary"
+				  @blur="validateBoundary"
+				  aria-label="Left boundary"
+				/>
+			  </div>
+			  <div class="input-group">
+				<span>Ri:</span>
+				<input
 				  type="number"
-				  v-model.number="properties.width"
-				  min="10"
-				  max="700"
+				  v-model="currentModeConfig.boundary.rightH"
+				  min="0"
+				  max="300"
 				  step="10"
-				  @change="validateWidth"
-				  @blur="validateWidth"
-	            />
-	        </div>
-	    </div>
-
-	    <div class="specific-props" v-if="selectedType === 'Radar'">
-	        <!-- 模式选择 -->
-	        <div class="mode-select">
-	            <label>
-	                <input type="radio" v-model="properties.mode" value="ceiling" />
-	                Ceiling
-	            </label>
-	            <label>
-	                <input type="radio" v-model="properties.mode" value="wall" />
-	                Wall
-	            </label>
-	        </div>
-
-	        <!-- 高度输入 -->
-	        <div class="height-input">
-	            <div class="input-group">
-	                <span>H:</span>
-	                <input
-						  type="number"
-						  v-model.number="currentModeConfig.height.default"
-						  min="0"
-						  max="330"
-						  step="10"
-						  @change="validateHeight"
-						  @blur="validateHeight"
-	                />
-	                <span class="accuracy">150~330cm</span>
-	            </div>
-	        </div>
-
-	        <!-- 边界设置 -->
-	        <div class="boundary-settings">
-	            <div class="boundary-row">
-	                <div class="input-group">
-	                    <span>Le:</span>
-	                    <input
-	                        type="number"
-	                        v-model="currentModeConfig.boundary.leftH"
-	                        min="0"
-	                        max="300"
-	                        step="10"
-	                        @change="validateBoundary"
-	                        @blur="validateBoundary"
-	                    />
-	                </div>
-	                <div class="input-group">
-	                    <span>Ri:</span>
-	                    <input
-	                        type="number"
-	                        v-model="currentModeConfig.boundary.rightH"
-	                        min="0"
-	                        max="300"
-	                        step="10"
-	                        @change="validateBoundary"
-	                        @blur="validateBoundary"
-	                    />
-	                </div>
-	            </div>
-	            <div class="boundary-row">
-	                <div class="input-group">
-	                    <span>Fr:</span>
-	                    <input
-	                        type="number"
-	                        v-model="currentModeConfig.boundary.frontV"
-	                        :min="properties.mode === 'wall' ? 0 : 0"
-	                        :max="properties.mode === 'wall' ? 400 : 200"
-	                        step="10"
-	                        @change="validateBoundary"
-	                        @blur="validateBoundary"
-	                    />
-	                </div>
-	                <div class="input-group">
-	                    <span>Ba:</span>
-	                    <input
-	                        type="number"
-	                        v-model="currentModeConfig.boundary.rearV"
-	                        :min="properties.mode === 'wall' ? 0 : 0"
-	                        :max="properties.mode === 'wall' ? 0 : 200"
-	                        step="10"
-	                        @change="validateBoundary"
-	                        @blur="validateBoundary"
-	                    />
-	                    <!-- 后边界输入 -->
-	                </div>
-	            </div>
-	        </div>
-
-	        <!-- 开关选项 -->
-	        <div class="show-controls">
-	            <label>
-	                <span>Show:</span>
-	                <input type="checkbox" v-model="properties.showBoundary">
-	                <span>Boundary</span>
-	                <input type="checkbox" v-model="properties.showSignal">
-	                <span>Signal</span>
-	            </label>
-	            <!-- 边界显示开关 -->
-	        </div>
-	    </div>
-
-	    <div class="specific-props" v-if="selectedType === 'Bed'">
-	        <div class="toggle-item">
-	            <label>
-	                <input type="checkbox" v-model="properties.isMonitored" />
-	                Monitor Mode
-	            </label>
-	        </div>
-	    </div>
-
-	    <div class="specific-props" v-if="selectedType === 'Other'">
-	        <div class="toggle-item">
-	            <label>
-	                <input type="checkbox" v-model="properties.borderOnly" />
-	                Border Only
-	            </label>
-	        </div>
-	    </div>
+				  @change="validateBoundary"
+				  @blur="validateBoundary"
+				  aria-label="Right boundary"
+				/>
+			  </div>
+			</div>
+			<div class="boundary-row">
+			  <div class="input-group">
+				<span>Fr:</span>
+				<input
+				  type="number"
+				  v-model="currentModeConfig.boundary.frontV"
+				  :min="properties.mode === 'wall' ? 0 : 0"
+				  :max="properties.mode === 'wall' ? 400 : 200"
+				  step="10"
+				  @change="validateBoundary"
+				  @blur="validateBoundary"
+				  aria-label="Front boundary"
+				/>
+			  </div>
+			  <div class="input-group">
+				<span>Ba:</span>
+				<input
+				  type="number"
+				  v-model="currentModeConfig.boundary.rearV"
+				  :min="properties.mode === 'wall' ? 0 : 0"
+				  :max="properties.mode === 'wall' ? 0 : 200"
+				  step="10"
+				  @change="validateBoundary"
+				  @blur="validateBoundary"
+				  aria-label="Rear boundary"
+				/>
+			  </div>
+			</div>
+		  </div>
+  
+		  <div class="show-controls">
+			<label>
+			  <span>Show:</span>
+			  <input type="checkbox" v-model="properties.showBoundary" aria-label="Show boundary">
+			  <span>Boundary</span>
+			  <input type="checkbox" v-model="properties.showSignal" aria-label="Show signal">
+			  <span>Signal</span>
+			</label>
+		  </div>
+		</div>
+  
+		<div class="specific-props" v-if="selectedType === 'Bed'">
+		  <div class="toggle-item">
+			<label>
+			  <input type="checkbox" v-model="properties.isMonitored" />
+			  Monitor Mode
+			</label>
+		  </div>
+		</div>
+  
+		<div class="specific-props" v-if="selectedType === 'Other'">
+		  <div class="toggle-item">
+			<label>
+			  <input type="checkbox" v-model="properties.borderOnly" />
+			  Border Only
+			</label>
+		  </div>
+		</div>
+	  </div>
+  
+	  <!-- 控制区 -->
+	  <div class="control-area">
+		<div class="coordinates">
+		  <div class="coord-item">
+			<span aria-hidden="true">X:</span>
+			<span class="coord-value" aria-label="X coordinate">{{ displayPosition.x }}</span>
+		  </div>
+		  <div class="coord-item">
+			<span aria-hidden="true">Y:</span>
+			<span class="coord-value" aria-label="Y coordinate">{{ displayPosition.y }}</span>
+		  </div>
+		</div>
+  
+		<div class="direction-control">
+		  <div class="left-controls">
+			<div>
+			  <label class="control-item" title="Lock">
+				<input type="checkbox" v-model="isLocked" />
+				🔒
+			  </label>
+			</div>
+			<div>
+			  <label class="control-item" title="Scale">
+				<input type="checkbox" v-model="canvasStore.showScale" />
+				📏
+			  </label>
+			</div>
+			<div>
+			  <label class="control-item" title="Grid">
+				<input type="checkbox" v-model="canvasStore.showGrid" />
+				#️⃣
+			  </label>
+			</div>
+		  </div>
+		  <div class="right-controls">
+			<button class="dir-btn up" @click="move('up')" :disabled="isLocked">↑</button>
+			<div class="middle-row">
+			  <button class="dir-btn left" @click="move('left')" :disabled="isLocked">←</button>
+			  <button class="dir-btn right" @click="move('right')" :disabled="isLocked">→</button>
+			</div>
+			<button class="dir-btn down" @click="move('down')" :disabled="isLocked">↓</button>
+		  </div>
+		</div>
+  
+		<div class="rotation-control">
+		  <button class="rot-btn" @click="rotate(-90)" :disabled="isLocked">-90°</button>
+		  <button class="rot-btn" @click="rotate(-15)" :disabled="isLocked">-15°</button>
+		  <button class="rot-btn" @click="rotate(15)" :disabled="isLocked">+15°</button>
+		  <button class="rot-btn" @click="rotate(90)" :disabled="isLocked">+90°</button>
+		</div>
+	  </div>
 	</div>
+  </template>
+  
 
-    <!-- 控制区 -->
-    <div class="control-area">
-      <div class="coordinates">
-        <div class="coord-item">
-          <span>X:</span>
-          <input type="number" v-model="displayPosition.x" readonly />
-        </div>
-        <div class="coord-item">
-          <span>Y:</span>
-          <input type="number" v-model="displayPosition.y" readonly />
-        </div>
-      </div>
 
-      <div class="direction-control">
-        <!-- 左列：开关控制 -->
-        <div class="left-controls">
-          <div>
-            <label class="control-item" title="Lock">
-              <input type="checkbox" v-model="isLocked" />
-              🔒
-            </label>
-          </div>
-          <div>
-            <label class="control-item" title="Scale">
-              <input type="checkbox" v-model="canvasStore.showScale" />
-              📏
-            </label>
-          </div>
-          <div>
-            <label class="control-item" title="Grid">
-              <input type="checkbox" v-model="canvasStore.showGrid" />
-              #️⃣
-            </label>
-          </div>
-        </div>
-        <!-- 右列：方向控制 -->
-        <div class="right-controls">
-          <button class="dir-btn up" @click="move('up')" :disabled="isLocked">
-            ↑
-          </button>
-          <div class="middle-row">
-            <button
-              class="dir-btn left"
-              @click="move('left')"
-              :disabled="isLocked"
-            >
-              ←
-            </button>
-            <button
-              class="dir-btn right"
-              @click="move('right')"
-              :disabled="isLocked"
-            >
-              →
-            </button>
-          </div>
-          <button
-            class="dir-btn down"
-            @click="move('down')"
-            :disabled="isLocked"
-          >
-            ↓
-          </button>
-        </div>
-      </div>
-
-      <div class="rotation-control">
-        <button class="rot-btn" @click="rotate(-90)" :disabled="isLocked">
-          -90°
-        </button>
-        <button class="rot-btn" @click="rotate(-15)" :disabled="isLocked">
-          -15°
-        </button>
-        <button class="rot-btn" @click="rotate(15)" :disabled="isLocked">
-          +15°
-        </button>
-        <button class="rot-btn" @click="rotate(90)" :disabled="isLocked">
-          +90°
-        </button>
-      </div>
-    </div>
-  </div>
-</template>
-
-###########//2 script部分代码
+  ###########//2 script部分代码
 <script setup lang="ts">
 // 1. 导入
-import { ref, reactive, watch, computed } from "vue";
+import { ref, reactive, watch, computed, onMounted } from "vue";
 import { useObjectsStore } from "../stores/objects";
 import { useMouseStore } from "../stores/mouse";
 import { useCanvasStore } from "../stores/canvas";
@@ -303,14 +276,20 @@ const canvasStore = useCanvasStore();
 const radarDataStore = useRadarDataStore();
 const isTesting = ref(false);
 
+
+//触发测试
 const toggleTest = () => {
   isTesting.value = !isTesting.value;
   if (isTesting.value) {
+	//radarDataStore.initAlarms(); // 添加这行 - 先初始化警报
     radarDataStore.startDataStream();
   } else {
     radarDataStore.stopDataStream();
   }
 };
+
+
+
 
 
 // 3. 接口定义
@@ -797,7 +776,9 @@ const loadRoom = (event: MouseEvent) => {
  input.click();
 };
 
-
+defineExpose({
+  toggleTest
+});
 
 </script>
 
@@ -805,6 +786,18 @@ const loadRoom = (event: MouseEvent) => {
 ###########//3 样式部分scss
 
 <style lang="scss" scoped>
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .radar-toolbar {
   position: relative;
   padding: 8px;
@@ -905,25 +898,6 @@ const loadRoom = (event: MouseEvent) => {
           }
         }
 
-		/* 删除set键
-        &.set-btn {
-          background: #ccc; // 默认灰色
-          color: white;
-
-          &:not(:disabled) {
-            // 可用状态
-            background: #52c41a; // 绿色
-            &:hover {
-              background: #73d13d;
-            }
-          }
-
-          &:disabled {
-            cursor: not-allowed;
-          }
-        }
-		*/
-
         &.delete-btn {
           background: #ff4d4f;
           color: white;
@@ -936,261 +910,223 @@ const loadRoom = (event: MouseEvent) => {
           background: #ccc;
           cursor: not-allowed;
         }
-		&.test-btn {
-			background: #e6eff8;}
-
+        &.test-btn {
+          background: #e6eff8;
+        }
       }
 
-	  .layout-btn {
+      .layout-btn {
         height: 28px;
         border: 1px solid #ccc;
         border-radius: 2px;
         font-size: 12px;
         cursor: pointer;
-		//background: #d5e7f7;
-		&.saveRoom-btn {
-			background: #f9f1f1;}
-		&.loadRoom-btn {
-			background: #f9f1f1;}
-		&:hover {
-		  background: #a5cff2;
-		}
-	  }
-    }
-  }
-
-.property-area {
-  background: #f9f9f9; // 设置背景颜色为浅灰色
-  //padding: 10px 12px; // 增加内边距，上下10,左右12
-  padding-top: 10;  //只设上边距
-  border-radius: 4px; // 设置圆角边框，半径为4px
-  margin-top: 6px; // 增加与template区的间距，顶部间距为1px
-  margin-bottom: 120px; // 减少底部空间，底部间距为120px
-
-  // 增加各部分间距，选择.property-area的直接子元素div
-  > div {
-    margin-bottom: 10px; // 增加各部分之间的间距为10px
-  }
-
- 
- /* .name-row {
-  display: flex;
-  gap: 4px;
-  align-items: center;
-  padding-right: 6px;  // 添加右边距，确保不会贴着边界
-  margin-bottom: 8px;
-
-  span {
-    font-size: 12px;
-    color: #666;
-    min-width: 40px;  // 与其他标签宽度保持一致
-  }
-
-  .name-input {
-    width: 110px;
-    height: 24px;  // 与按钮高度保持一致
-    padding: 0 6px;
-    font-size: 12px;
-    border: 1px solid #ccc;
-    border-radius: 2px;
-    box-sizing: border-box;
-
-    &:focus {
-      outline: none;
-      border-color: #1890ff;
-    }
-
-    &::placeholder {
-      color: #ccc;
-    }
-  }
-}
-*/
-  
-  .name-row {
-    margin-bottom: 8px; // 增加底部间距为8px
-	
-	span {
-          font-size: 12px; // 字体大小为12px
-          color: #666; // 文字颜色为灰色
+        &.saveRoom-btn {
+          background: #f9f1f1;
         }
+        &.loadRoom-btn {
+          background: #f9f1f1;
+        }
+        &:hover {
+          background: #a5cff2;
+        }
+      }
+    }
+  }
 
-    .name-input {
-      width:  100px ;//100%; // 输入框宽度占满父容器
-      padding: 4px; // 输入框内边距为4px
-      font-size: 12px; // 输入框字体大小为12px
-      border: 1px solid #ccc; // 输入框边框为1px的灰色实线
-      border-radius: 2px; // 输入框圆角边框，半径为2px
-      margin-right: 6px; // 增加右边距为2px
+  .property-area {
+    background: #f9f9f9;
+    padding-top: 4px;  //  调整上边距 10->4
+    border-radius: 4px;
+    margin-top: 6px;
+    margin-bottom: 110px;  //少了一行24px, 120->110
+
+    > div {
+      margin-bottom: 10px;
     }
 
- 	
-		.test-btn {
-		width:46px;
-        height: 23px;
-		border: 1px solid #ccc;
-        border-radius: 2px;
-		//margin-right: 2px;
-        font-size: 12px;
-        cursor: pointer;
-		//background: #d5e7f7;
-		&:hover {
-			background: #b3d7f5;
-		}
-  	} 
-  }
-  
-
-  .size-row {
-    display: flex; // 使用flex布局
-    gap: 10px; // 子元素之间的间距为10px
-    margin-bottom: 8px; // 增加底部间距为8px
-
-    .input-group {
-      display: flex; // 使用flex布局
-      align-items: center; // 子元素垂直居中对齐
+    .name-row {
+      margin-bottom: 1px;
+	  margin-top: 2px
 
       span {
-        font-size: 12px; // 字体大小为12px
-        margin-right: 4px; // 右边距为4px
+        font-size: 12px;
+        color: #666;
       }
 
-      input {
-        width: 50px; // 输入框宽度为50px
-        padding: 2px 4px; // 输入框内边距上下2px，左右4px
-        text-align: right; // 输入框文本右对齐
-        font-size: 12px; // 输入框字体大小为12px
-        border: 1px solid #ccc; // 输入框边框为1px的灰色实线
-        border-radius: 2px; // 输入框圆角边框，半径为2px
+      .name-input {
+        width: 100px;
+        padding: 4px;
+        font-size: 12px;
+        border: 1px solid #ccc;
+        border-radius: 2px;
+        margin-right: 6px;
       }
-    }
-  }
 
-  .specific-props {
-    font-size: 12px; // 字体大小为12px
-
-    .mode-select {
-      display: flex; // 使用flex布局
-      gap: 20px; // 两个选项之间的间距为20px
-      margin-bottom: 10px; // 增加底部间距为10px
-
-      label {
-        display: flex; // 使用flex布局
-        align-items: center; // 子元素垂直居中对齐
-        gap: 6px; // radio与文字的间距为6px
-        cursor: pointer; // 鼠标悬停时显示为指针样式
-
-        input[type="radio"] {
-          margin: 0; // 去除默认外边距
+      .test-btn {
+        width: 46px;
+        height: 23px;
+        border: 1px solid #ccc;
+        border-radius: 2px;
+        font-size: 12px;
+        cursor: pointer;
+        &:hover {
+          background: #b3d7f5;
         }
       }
     }
 
-    .height-input {
-      margin-bottom: 8px; // 增加底部间距为8px
+    .size-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 8px;
 
       .input-group {
-        display: flex; // 使用flex布局
-        align-items: center; // 子元素垂直居中对齐
+        display: flex;
+        align-items: center;
 
         span {
-          font-size: 12px; // 字体大小为12px
-          margin-right: 4px; // 右边距为4px
-
-          &.accuracy {
-            margin-left: 12px; // 左边距为12px
-            color: #666; // 文字颜色为灰色
-            font-size: 11px; // 字体大小为11px
-          }
+          font-size: 12px;
+          margin-right: 4px;
         }
 
         input {
-          width: 50px; // 输入框宽度为45px
-          padding: 2px 4px; // 输入框内边距上下2px，左右4px
-          text-align: right; // 输入框文本右对齐
-          font-size: 12px; // 输入框字体大小为12px
-          border: 1px solid #ccc; // 输入框边框为1px的灰色实线
-          border-radius: 2px; // 输入框圆角边框，半径为2px
+          width: 50px;
+          padding: 2px 4px;
+          text-align: right;
+          font-size: 12px;
+          border: 1px solid #ccc;
+          border-radius: 2px;
         }
       }
     }
 
-    .boundary-settings {
-      margin: 8px 0; // 上下外边距为8px，左右外边距为0
+    .specific-props {
+      font-size: 12px;
 
-      .boundary-row {
-        display: flex; // 使用flex布局
-        align-items: center; // 子元素垂直居中对齐
-        gap: 8px; // 子元素之间的间距为8px
-        margin-bottom: 6px; // 增加底部间距为6px
+      .mode-select {
+        display: flex;
+        gap: 20px;
+        margin-bottom: 10px;
 
-        span {
-          font-size: 12px; // 字体大小为12px
-          color: #666; // 文字颜色为灰色
+        label {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          cursor: pointer;
+
+          input[type="radio"] {
+            margin: 0;
+          }
         }
+      }
+
+      .height-input {
+        margin-bottom: 8px;
 
         .input-group {
-          flex: 1; // 弹性伸缩，占满剩余空间
+          display: flex;
+          align-items: center;
+
+          span {
+            font-size: 12px;
+            margin-right: 4px;
+
+            &.accuracy {
+              margin-left: 12px;
+              color: #666;
+              font-size: 11px;
+            }
+          }
+
           input {
-            width: 50px; // 输入框宽度为45px
-            padding: 2px 4px; // 输入框内边距上下2px，左右4px
-            text-align: right; // 输入框文本右对齐
-            font-size: 12px; // 输入框字体大小为12px
-            border: 1px solid #ccc; // 输入框边框为1px的灰色实线
-            border-radius: 2px; // 输入框圆角边框，半径为2px
+            width: 50px;
+            padding: 2px 4px;
+            text-align: right;
+            font-size: 12px;
+            border: 1px solid #ccc;
+            border-radius: 2px;
+          }
+        }
+      }
+
+      .boundary-settings {
+        margin: 8px 0;
+
+        .boundary-row {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-bottom: 6px;
+
+          span {
+            font-size: 12px;
+            color: #666;
+          }
+
+          .input-group {
+            flex: 1;
+            input {
+              width: 50px;
+              padding: 2px 4px;
+              text-align: right;
+              font-size: 12px;
+              border: 1px solid #ccc;
+              border-radius: 2px;
+            }
+          }
+        }
+      }
+
+      .show-controls {
+        display: flex;
+        align-items: flex-start;
+        margin-top: 8px;
+        padding: 4px 0;
+        
+        label {
+          display: flex;
+          gap: 6px;
+          font-size: 12px;
+
+          input[type="checkbox"] {
+            margin: 0;
+            cursor: pointer;
+          }
+
+          span {
+			-webkit-user-select: none;  // Safari 3+
+		    -moz-user-select: none;     // Firefox
+		    -ms-user-select: none;      // IE 10+
+		    user-select: none;          // Standard syntax
+            margin-right: 0px;
           }
         }
       }
     }
-
-    // 新增的 show-controls 样式
-    .show-controls {
-      display: flex; // 使用flex布局
-      align-items: flex-start; // 左对齐
-      margin-top: 8px; // 顶部外边距为8px
-      padding: 4px 0; // 上下内边距为4px，左右内边距为0
-      
-      label {
-        display: flex; // 使用flex布局
-        //align-items: center;
-        gap: 6px; // 子元素之间的间距为6px
-        font-size: 12px; // 字体大小为12px
-
-        input[type="checkbox"] {
-          margin: 0; // 去除默认外边距
-          cursor: pointer; // 鼠标悬停时显示为指针样式
-        }
-
-        span {
-          user-select: none; // 禁止用户选择文本
-		margin-right: 0px   ; // 向左边框移动，只保留0px间距
-        }
-      }
-    }
   }
-}
 
   .control-area {
     position: absolute;
-    bottom: 2px; // 缩短10px
+    bottom: 4px;  // 调整底部边距 2->4
     left: 8px;
     right: 8px;
     background: #f9f9f9;
-    padding: 10px;
+    padding: 8px;		// 调整上边距 10
     border-top: 1px solid #eee;
 
-    // 坐标显示
     .coordinates {
       display: flex;
-      justify-content: space-between;
+      justify-content:  flex-start;
       margin-bottom: 10px;
 
       .coord-item {
         display: flex;
         align-items: center;
         gap: 4px;
-
-        span {
+		margin-right: 20px;  /* Add this line to create smaller controlled spacing */
+        
+		span {
           font-size: 12px;
         }
 
@@ -1214,11 +1150,11 @@ const loadRoom = (event: MouseEvent) => {
       flex-direction: row;
       align-items: center;
       margin-bottom: 10px;
-      width: 100%; /* 容器宽度，根据需要调整 */
-      justify-content: space-between; /* 左右两列水平拉伸，两端对齐 */
+      width: 100%;
+      justify-content: space-between;
 
       .left-controls {
-        width: 50px; /* 调整左列宽度，根据实际内容调整 */
+        width: 50px;
       }
 
       .right-controls {
@@ -1226,13 +1162,6 @@ const loadRoom = (event: MouseEvent) => {
         flex-direction: column;
         align-items: center;
         justify-content: center;
-      }
-
-      .direction-buttons {
-        display: flex;
-        flex-direction: column; /* 方向键竖向排列 */
-        align-items: center; /* 方向键水平居中 */
-        justify-content: center; /* 方向键垂直居中 */
       }
 
       .middle-row {
@@ -1263,7 +1192,6 @@ const loadRoom = (event: MouseEvent) => {
       }
     }
 
-    // 旋转控制
     .rotation-control {
       margin-top: 10px;
       display: flex;
@@ -1300,7 +1228,4 @@ input[type="number"] {
     margin: 0;
   }
 }
-
-
-
 </style>

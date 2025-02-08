@@ -27,6 +27,10 @@ test_layout.json例中，雷达有逆时针转90，rotation=270，即V+=X+
 3.其它区域姿态0-5，7，8，不能产生生理指标
 4.每种姿态需保持5-10秒，typeValue=（2，5），即床上需8-15秒
 6.以上每种姿态及各处生理指标中的，undefined,normal,warning,danger均需测试到。
+L1/2 alarm
+ 1. L1警报结束后， 15秒内禁止发送所有警报
+  2. L2警报结束后，15秒内禁止发磅L2类警报
+  3. L1 alarm可cancel L2_alarm
 
 
 danger 30%, warning 30%, normal 10%,undefined 10%

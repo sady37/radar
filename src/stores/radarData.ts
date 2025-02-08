@@ -1,15 +1,18 @@
 // stores/radarData.ts
 import { defineStore } from "pinia";
 import { ref, watch } from "vue";
-import type { PersonData, VitalSignData } from "./types";
-import { MockRadarService } from "../utils/mockRadarData";
-import { getHeartRateStatus, getBreathingStatus, getPostureLevel } from "../utils/postureIcons";
 
+import { MockRadarService } from "../utils/mockRadarData";
+import type { PersonData, VitalSignData, PersonPosture } from './types'
+import { getHeartRateStatus, getBreathingStatus, getPostureLevel } from "../utils/postureIcons"
 export const useRadarDataStore = defineStore("radarData", () => {
  // Basic states
  const currentPersons = ref<PersonData[]>([])
  const currentVital = ref<VitalSignData | null>(null)
  const mockService = ref(new MockRadarService())
+
+const l1CooldownUntil = ref(0)  // Timestamp when L1 cooldown ends
+const l2CooldownUntil = ref(0)  // Timestamp when L2 cooldown ends
 
  // Alarm states 
  const l1Audio = ref<HTMLAudioElement | null>(null)
@@ -17,50 +20,106 @@ export const useRadarDataStore = defineStore("radarData", () => {
  const lastVitalUpdate = ref(Date.now())
  const lastPostureUpdate = ref(Date.now())
 
- // Constants
- const VITAL_TIMEOUT = 5000  // 5s
- const POSTURE_TIMEOUT = 2000 // 2s
+ // Constants   // 时间常量
+ const VITAL_TIMEOUT = 2000  // 2s生命体征超时
+ const POSTURE_TIMEOUT = 2000 // 2s 姿势超时
+
+const L1_ALARM_DURATION = 11000 // 10s L1 警报持续时间
+const L2_ALARM_DURATION = 1000  // 1s
+const ALARM_COOLDOWN = 15000    // 15 seconds cooldown 避免警报频繁触发
+
+const FALL_CONFIRM_DURATION = 5000  // 5秒检测时间
+const fallConfirmStartTime = ref(0)  // 跟踪确认跌倒的开始时间
+
 
  // Alarm initialization
  function initAlarms() {
-   l1Audio.value = new Audio('/assets/alarms/l1-alarm.mp3')
-   l2Audio.value = new Audio('/assets/alarms/l2-alarm.mp3')
-   if(l1Audio.value) l1Audio.value.loop = true
-   if(l2Audio.value) l2Audio.value.loop = false
- }
+	  l1Audio.value = new Audio('/alarms/L1_alarm.mp3');
+	  l2Audio.value = new Audio('/alarms/L2_alarm.mp3');
+	  if(l1Audio.value) l1Audio.value.loop = true;
+	  if(l2Audio.value) l2Audio.value.loop = false;
+  }
+  
+  /*
+Adds cooldown timers that track when each type of alarm can play again
+After L1 alarm ends, blocks all alarms for 15 seconds
+After L2 alarm ends, only blocks L2 alarms for 15 seconds
+Respects existing alarm priorities (L1 still cancels L2)
+Resets cooldown timers when alarms are manually stopped
+*/
+// 播放 L1 警报
+function playL1Alarm() {
+	const now = Date.now()
+	
+	// Check if in any cooldown period
+	if (now < l1CooldownUntil.value) {
+	  return // Still in cooldown, don't play
+	}
+  
+	if(l2Audio.value) {
+		l2Audio.value.pause()
+		l2Audio.value.currentTime = 0
+	  }
 
- // Alarm controls
- function playL1Alarm() {
-   if(l2Audio.value) l2Audio.value.pause()
-   if(l1Audio.value) {
-     l1Audio.value.play()
-     setTimeout(() => l1Audio.value?.pause(), 3000)
-   }
- }
+  if(l1Audio.value) {
+    console.log('Starting L1 alarm')
+    l1Audio.value.play().catch(e => console.error('L1 audio play error:', e))
+    // 不再设置自动停止的定时器，而是依赖状态检查来停止警报
+    l1CooldownUntil.value = Date.now() + ALARM_COOLDOWN
+  }
+	
+  }
+  
+// 播放 L2 警报
+function playL2Alarm() {
+	const now = Date.now()
+	
+	// 检查 cooldown
+	if (now < l1CooldownUntil.value || now < l2CooldownUntil.value) {
+	  console.log('L2 blocked by cooldown')
+	  return
+	}
+  
+	// 检查是否正在播放，使用 paused 属性
+	if(l2Audio.value && !l2Audio.value.paused) {
+	  console.log('L2 already playing')
+	  return
+	}
+  
+	if(l1Audio.value) return;
+	if(l2Audio.value) {
+	  console.log('Starting L2 alarm')
+	  // 立即设置 cooldown，而不是等到播放结束
+	  l2CooldownUntil.value = Date.now() + ALARM_COOLDOWN
+	  
+	  l2Audio.value.play();
+	  setTimeout(() => {
+		if(l2Audio.value) {
+		  console.log('L2 alarm finished')
+		  l2Audio.value.pause();
+		  l2Audio.value.currentTime = 0;
+		}
+	  }, L2_ALARM_DURATION);
+	}
+  }
 
- function playL2Alarm() {
-   if(l1Audio.value) l1Audio.value.pause()
-   if(l2Audio.value) {
-     l2Audio.value.play()
-     setTimeout(() => l2Audio.value?.pause(), 1000)
-   }
- }
-
- function stopAlarms() {
-   l1Audio.value?.pause()
-   l2Audio.value?.pause()
- }
+  function stopAlarms() {
+	l1Audio.value?.pause()
+	l2Audio.value?.pause()
+	// Reset cooldown timers
+	l1CooldownUntil.value = 0
+	l2CooldownUntil.value = 0
+  }
 
  // Data stream control
  function startDataStream() {
-   console.log('Starting data stream...')
+   initAlarms() // 
    mockService.value.startMockDataStream(
      (personsData) => {
        currentPersons.value = personsData
        lastPostureUpdate.value = Date.now()
      },
      (vitalData) => {
-       console.log('Vital data:', vitalData)
        currentVital.value = vitalData
        lastVitalUpdate.value = Date.now()
      }
@@ -91,29 +150,50 @@ export const useRadarDataStore = defineStore("radarData", () => {
 
  // Check for alarm conditions
  function checkAlarmTriggers() {
-   const person = currentPersons.value[0]
-   const vital = currentVital.value
-
-   if(!person || !vital) {
-     stopAlarms()
-     return
-   }
-
-   // Check posture level
-   const postureLevel = getPostureLevel(person.posture)
-   
-   // Check vital signs
-   const heartStatus = getHeartRateStatus(vital.heartRate)
-   const breathStatus = getBreathingStatus(vital.breathing)
-
-   if(postureLevel === 'danger' || heartStatus === 'danger' || breathStatus === 'danger') {
-     playL1Alarm()
-   } else if(postureLevel === 'warning' || heartStatus === 'warning' || breathStatus === 'warning') {
-     playL2Alarm()
-   } else {
-     stopAlarms()
-   }
- }
+	const person = currentPersons.value[0]
+	const vital = currentVital.value
+	const now = Date.now()
+  
+	// 检查是否存在危险状态
+	let hasDangerState = false
+  
+	// 1. 检查跌倒状态
+	if(person?.posture === 5 || person?.posture === 8) {  // FallConfirm 或 SitGroundConfirm
+	  if(fallConfirmStartTime.value === 0) {
+		fallConfirmStartTime.value = now
+		console.log('Fall/SitGround confirm detected, starting timer')
+	  } else if(now - fallConfirmStartTime.value >= FALL_CONFIRM_DURATION) {
+		console.log('Fall/SitGround confirm exceeded threshold, triggering L1 alarm')
+		hasDangerState = true
+		playL1Alarm()
+	  }
+	} else {
+	  if(fallConfirmStartTime.value !== 0) {
+		console.log('Fall/SitGround confirm cleared')
+		fallConfirmStartTime.value = 0
+	  }
+	}
+  
+	// 2. 检查生命体征
+	if(vital) {
+	  const heartStatus = getHeartRateStatus(vital.heartRate)
+	  const breathStatus = getBreathingStatus(vital.breathing)
+  
+	  if(heartStatus === 'danger' || breathStatus === 'danger') {
+		hasDangerState = true
+		playL1Alarm()
+	  } else if(heartStatus === 'warning' || breathStatus === 'warning') {
+		playL2Alarm()
+	  }
+	}
+  
+	// 3. 如果没有危险状态，停止L1警报
+	if(!hasDangerState && l1Audio.value && !l1Audio.value.paused) {
+	  console.log('No danger state detected, stopping L1 alarm')
+	  l1Audio.value.pause()
+	  l1Audio.value.currentTime = 0
+	}
+  }
 
  // Update functions
  function updatePersonsData(data: PersonData[]) {

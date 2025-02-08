@@ -26,7 +26,7 @@ src/
 │   ├── mouse.ts            #mouse相关
 │   ├── objects.ts          #最初的各对像数据
 │   ├── radar.ts            #分离前的雷达数据结构
-│   ├── radarData.ts        # 存放真实雷达传送过的多人的数据:坐标、姿态、生理指标等
+│   ├── radarData.ts        # 存放真实雷达传送过的多人的数据:坐标、姿态、生理指标，并设置报警
 │   └── types.ts            #对象属性定义
 └── utils/                 # 工具函数
     ├── boundaryUtils.ts   #计算雷达的边界
@@ -89,3 +89,5 @@ src/
 	优化了一些UI，但模拟产生的坐标不对
 ###3.4.3
     优化mockRadaData 逻辑，生成mockRadarData服务，可直接调用config/test_layout.josn布局来生成测试数据
+###3.5
+  完成mockRadarData 测试，播放L1_alarm:Danger/fallconfirm, L2_alarm:warning。 

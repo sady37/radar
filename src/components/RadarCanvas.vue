@@ -55,26 +55,6 @@ const mouseStore = useMouseStore();
 const canvasStore = useCanvasStore();
 const radarDataStore = useRadarDataStore();
 
-/*// 在组件挂载时启动数据流
-onMounted(() => {
-  const canvas = canvasRef.value;
-  if (!canvas) return;
-
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return;
-
-  // 启动模拟数据流
-  radarDataStore.startDataStream();
-
-  drawCoordinateSystem(ctx);
-});
-
-// 在组件卸载时停止数据流
-onUnmounted(() => {
-  radarDataStore.stopDataStream();
-});
-*/
-
 
 // 3. 生命周期钩子
 onMounted(() => {

@@ -65,6 +65,10 @@ const toggleToolbar = () => {
   }
 
   .toggle-icon {
+	-webkit-user-select: none;  // Safari 3+
+    -moz-user-select: none;     // Firefox
+    -ms-user-select: none;      // IE 10+
+    user-select: none;          // Standard syntax
     color: #666;
     user-select: none;
   }

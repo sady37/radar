@@ -52,7 +52,7 @@ export const useObjectsStore = defineStore("objects", {
 	  const radar = this.objects.find(obj => obj.typeName === 'Radar');
 	  if (radar) {
 		this.radarReport = generateRadarReport(radar, this.objects);
-		console.log('Radar Report Updated:', this.radarReport);
+		//console.log('Radar Report Updated:', this.radarReport);
 	  }
 	},
  
