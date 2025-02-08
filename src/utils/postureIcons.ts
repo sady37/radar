@@ -82,35 +82,35 @@ export const POSTURE_CONFIGS: Record<number, PostureIconConfig> = {
 	  // SitGroundSuspect
 	  type: "svg",
 	  iconPath: iconMap["SitGroundSuspect"],
-	  size: 50,
+	  size: 60,
 	  showLabel: false,
 	},
 	8: {
 	  // SitGroundConfirm
 	  type: "svg",
 	  iconPath: iconMap["SitGroundConfirm"],
-	  size: 50,
+	  size: 60,
 	  showLabel: false,
 	},
 	9: {
 	  // SitUpBed
 	  type: "svg",
 	  iconPath: iconMap["SitUpBed"],
-	  size: 50,
+	  size: 60,
 	  showLabel: false,
 	},
 	10: {
 	  // SitUpBedSuspect
 	  type: "svg",
 	  iconPath: iconMap["SitUpBedSuspect"],
-	  size: 50,
+	  size: 60,
 	  showLabel: false,
 	},
 	11: {
 	  // SitUpBedConfirm
 	  type: "svg",
 	  iconPath: iconMap["SitUpBedConfirm"],
-	  size: 50,
+	  size: 60,
 	  showLabel: false,
 	},
   };
@@ -119,10 +119,10 @@ export const POSTURE_CONFIGS: Record<number, PostureIconConfig> = {
 // 生理状态图标配置
 export const VITAL_SIGN_CONFIGS = {
 	heart: {
-	  undefined: { type: "svg" as const, iconPath: iconMap["heart-gray"], size: 24, showLabel: false },
-	  normal: { type: "svg" as const, iconPath: iconMap["heart-green"], size: 24, showLabel: false },
-	  warning: { type: "svg" as const, iconPath: iconMap["heart-yellow"], size: 24, showLabel: false },
-	  danger: { type: "svg" as const, iconPath: iconMap["heart-red"], size: 24, showLabel: false }
+	  undefined: { type: "svg" as const, iconPath: iconMap["heartrate-gray"], size: 24, showLabel: false },
+	  normal: { type: "svg" as const, iconPath: iconMap["heartrate-green"], size: 24, showLabel: false },
+	  warning: { type: "svg" as const, iconPath: iconMap["heartrate-yellow"], size: 24, showLabel: false },
+	  danger: { type: "svg" as const, iconPath: iconMap["heartrate-red"], size: 24, showLabel: false }
 	},
 	breathing: {
 	  undefined: { type: "svg" as const, iconPath: iconMap["breathe-gray"], size: 24, showLabel: false },

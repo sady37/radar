@@ -26,7 +26,7 @@ const l2CooldownUntil = ref(0)  // Timestamp when L2 cooldown ends
 
 const L1_ALARM_DURATION = 11000 // 10s L1 警报持续时间
 const L2_ALARM_DURATION = 1000  // 1s
-const ALARM_COOLDOWN = 15000    // 15 seconds cooldown 避免警报频繁触发
+const ALARM_COOLDOWN = 5000    // 5 seconds cooldown 避免警报频繁触发
 
 const FALL_CONFIRM_DURATION = 5000  // 5秒检测时间
 const fallConfirmStartTime = ref(0)  // 跟踪确认跌倒的开始时间
@@ -154,6 +154,14 @@ function playL2Alarm() {
 	const vital = currentVital.value
 	const now = Date.now()
   
+  // 如果没有人，停止所有警报
+  if (!person) {
+    console.log('No person detected, stopping all alarms')
+    stopAlarms()
+    fallConfirmStartTime.value = 0  // 重置跌倒计时器
+    return
+  }
+
 	// 检查是否存在危险状态
 	let hasDangerState = false
   
@@ -186,7 +194,7 @@ function playL2Alarm() {
 		playL2Alarm()
 	  }
 	}
-  
+	
 	// 3. 如果没有危险状态，停止L1警报
 	if(!hasDangerState && l1Audio.value && !l1Audio.value.paused) {
 	  console.log('No danger state detected, stopping L1 alarm')

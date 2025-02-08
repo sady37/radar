@@ -658,10 +658,9 @@ const drawObjects = (ctx: CanvasRenderingContext2D) => {
     .filter((obj) => obj.typeName !== "Radar")
     .forEach((obj) => drawObject(ctx, obj));
 
-  // 绘制人员
-  drawPersons(ctx);
 
-  // 雷达对象最后绘制
+
+  // 雷达对象第二绘制
   objectsStore.objects
     .filter((obj) => obj.typeName === "Radar")
     .forEach((obj) => drawObject(ctx, obj));
@@ -700,6 +699,10 @@ const drawObjects = (ctx: CanvasRenderingContext2D) => {
       });
     }*/
   }
+
+    // 最后绘制人员
+	drawPersons(ctx);
+
 };
 </script>
 

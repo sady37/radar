@@ -90,4 +90,13 @@ src/
 ###3.4.3
     优化mockRadaData 逻辑，生成mockRadarData服务，可直接调用config/test_layout.josn布局来生成测试数据
 ###3.5
-  完成mockRadarData 测试，播放L1_alarm:Danger/fallconfirm, L2_alarm:warning。 
+  重构mockRateData 
+  1. L1警报结束后， 15秒内禁止发送所有警报
+  2. L2警报结束后，15秒内禁止触发L2类警报
+  3. L1 alarm可cancel L2_alarm
+  4.使用 hasDangerState 标志来跟踪是否存在危险状态
+		当没有危险状态时，直接停止L1警报
+		L2警报保持原有的自动停止机制（1秒）
+		简化了状态判断逻辑
+  5.重构mockRateData
+  6.将警报cooldown由15S->5S
