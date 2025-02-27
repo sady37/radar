@@ -100,3 +100,7 @@ src/
 		简化了状态判断逻辑
   5.重构mockRateData
   6.将警报cooldown由15S->5S
+
+
+#3.5.1
+修改breathe rate的alarm边界bug

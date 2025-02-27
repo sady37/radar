@@ -149,7 +149,7 @@ export const getHeartRateStatus = (rate: number) => {
    
    export const getBreathingStatus = (rate: number) => {
 	if (rate === undefined || rate === null || isNaN(rate)) return 'undefined';
-	if (rate >= 12 && rate <= 26) return 'normal';
+	if (rate >= 12 && rate <= 20) return 'normal';
 	if ((rate >= 8 && rate <= 11) || (rate >= 21 && rate <= 26)) return 'warning';
 	return 'danger';
    };
