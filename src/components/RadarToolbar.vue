@@ -39,6 +39,7 @@
 		  <button class="action-btn test-btn" :class="{ 'active': isTesting }" @click="toggleTest">Test</button>
 		  <button class="layout-btn saveRoom-btn" @click="saveRoom">saveRm</button>
 		  <button class="layout-btn loadRoom-btn" type="button" @click="loadRoom($event)">loadRm</button>
+		  <button class="layout-btn send-btn" @click="sendConfig" :disabled="!hasSelectedRadar">Send</button>
 		</div>
 	  </div>
   
@@ -258,12 +259,14 @@
   ###########//2 script部分代码
 <script setup lang="ts">
 // 1. 导入
-import { ref, reactive, watch, computed, onMounted } from "vue";
+import { ref, reactive, watch, computed, } from "vue";
 import { useObjectsStore } from "../stores/objects";
 import { useMouseStore } from "../stores/mouse";
 import { useCanvasStore } from "../stores/canvas";
 import type { ObjectProperties, RoomLayout } from "../stores/types";
 import { useRadarDataStore } from '../stores/radarData';
+import { RadarConfigManager } from "../services/radarConfigManager";
+import { useRadarConfigStore } from "../stores/radarConfig";
 
 
 
@@ -288,11 +291,45 @@ const toggleTest = () => {
   }
 };
 
+//radar同步相关
+// 定义emit
+const emit = defineEmits(['send-config']);
 
+// 添加计算属性 hasSelectedRadar
+const hasSelectedRadar = computed(() => {
+  return objectsStore.selectedId !== null && 
+         objectsStore.selectedObject?.typeName === 'Radar';
+});
+
+// 添加 sendConfig 方法
+const sendConfig = async () => {
+  if (!hasSelectedRadar.value) return;
+  
+  const radarId = objectsStore.selectedId;
+  if (!radarId) return;
+  
+  // 创建配置管理器实例
+  const configManager = new RadarConfigManager(useRadarConfigStore());
+  
+  // 发送配置
+  try {
+    // 开始发送前通知
+    emit('send-config', radarId);
+    
+    // 执行发送配置
+    const result = await configManager.sendConfig(radarId);
+    
+    // 根据结果处理后续操作
+    console.log("Configuration send result:", result);
+  } catch (error) {
+    console.error("Error sending configuration:", error);
+  }
+};
 
 
 
 // 3. 接口定义
+
 
 // 4. 状态定义
 
@@ -776,8 +813,11 @@ const loadRoom = (event: MouseEvent) => {
  input.click();
 };
 
+
+// defineExpose 扩展为包含 sendConfig
 defineExpose({
-  toggleTest
+  toggleTest,
+  sendConfig
 });
 
 </script>
@@ -921,12 +961,23 @@ defineExpose({
         border-radius: 2px;
         font-size: 12px;
         cursor: pointer;
+
         &.saveRoom-btn {
           background: #f9f1f1;
         }
         &.loadRoom-btn {
           background: #f9f1f1;
         }
+		&.send-btn {
+		    background: #e1f7e1;
+		    &:hover:not(:disabled) {
+		      background: #c8f0c8;
+		    }
+		    &:disabled {
+		      opacity: 0.5;
+		      cursor: not-allowed;
+		    }
+		}
         &:hover {
           background: #a5cff2;
         }

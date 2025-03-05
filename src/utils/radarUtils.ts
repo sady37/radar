@@ -24,6 +24,7 @@
  * @param radar - 雷达属性，包含画布坐标和旋转角度
  * @returns - 返回在雷达坐标系中的顶点数组[(h,v)]
  */
+ import type { RadarView, RadarProperties } from "../stores/types";
 
 import type { 
 	ObjectProperties, 
@@ -171,9 +172,6 @@ export function getObjectsInBoundary(objects: ObjectProperties[], radar: ObjectP
 }
 
 // 生成雷达报告
-
-
-// radarUtils.ts
 export function generateRadarReport(radar: ObjectProperties | null, objects: ObjectProperties[]): RadarReport | null {
 	// 如果没有雷达，返回 null，因为 RadarReport 就是用于雷达视角的
 	if (!radar) {
@@ -199,8 +197,8 @@ export function generateRadarReport(radar: ObjectProperties | null, objects: Obj
 	};
   }
 
-
-  export function toCanvasCoordinate(radarPoint: RadarPoint, radar: ObjectProperties): Point {
+//将人的雷达坐标转换为画布坐标
+export function toCanvasCoordinate(radarPoint: RadarPoint, radar: ObjectProperties): Point {
     const rad = (radar.rotation * Math.PI) / 180;
     // 先旋转
     const rotated = {
@@ -225,3 +223,203 @@ export function toRadarCoordinate(canvasX: number, canvasY: number, radar: Objec
         v: dx * Math.sin(rad) + dy * Math.cos(rad)
     };
 }
+
+
+//radarView
+/**
+ * 从雷达对象和场景中的其他对象生成雷达视图配置
+ * @param radar - 雷达对象属性
+ * @param objects - 场景中的所有对象
+ * @returns 雷达视图配置
+ */
+export function generateRadarView(radar: ObjectProperties, objects: ObjectProperties[]): RadarView {
+	// 基本配置
+	const radarView: RadarView = {
+	  radar_install_style: radar.mode === "ceiling" ? "0" : "1",
+	  radar_install_height: String(Math.round(
+		radar.mode === "ceiling" 
+		  ? radar.ceiling.height.default / 10 
+		  : radar.wall.height.default / 10
+	  )),
+	  rectangle: formatRectangle(radar)
+	};
+	
+	// 处理区域配置
+	const relevantObjects = objects.filter(obj => 
+	  obj.id !== radar.id && 
+	  ['Bed', 'TV', 'Door', 'Other', 'Exclude'].includes(obj.typeName)
+	);
+	
+	// 为每个相关对象生成区域配置
+	relevantObjects.forEach((obj, index) => {
+		// 计算对象在雷达坐标系中的顶点
+		const vertices = getObjectVertices(obj, radar);
+		if (vertices.length === 4) {
+		  const isInBoundary = vertices.some(vertex => isPointInBoundary(vertex, radar));
+		  if (isInBoundary) {
+			const areaType = getAreaTypeForObject(obj);
+			const areaKey = getAreaKeyForObject(obj);
+			
+			// 格式化区域配置
+			radarView[areaKey] = formatAreaConfig(index, areaType, vertices);
+		  }
+		}
+	  });
+	  
+	  return radarView;
+  }
+  
+  /**
+   * 获取对象的区域类型
+   */
+  function getAreaTypeForObject(obj: ObjectProperties): number {
+	if (obj.typeName === 'Bed') return obj.isMonitored ? 5 : 2;
+	if (obj.typeName === 'Door') return 4;
+	if (obj.typeName === 'TV' || obj.typeName === 'Exclude') return 3;
+	return 1; // Other or default
+  }
+  
+  /**
+   * 获取对象的区域键名
+   */
+  function getAreaKeyForObject(obj: ObjectProperties): string {
+	return `declare_area_${obj.typeName === obj.name ? obj.name : obj.typeName + obj.name}`;
+  }
+  
+  /**
+   * 格式化雷达矩形边界
+   */
+  function formatRectangle(radar: ObjectProperties): string {
+	const mode = radar.mode || 'ceiling';
+	const boundary = mode === 'ceiling' ? radar.ceiling.boundary : radar.wall.boundary;
+	
+	// 根据雷达模式生成边界顶点
+	let vertices = [];
+	if (mode === 'ceiling') {
+	  vertices = [
+		{ h: -boundary.leftH, v: -boundary.rearV },
+		{ h: boundary.rightH, v: -boundary.rearV },
+		{ h: -boundary.leftH, v: boundary.frontV },
+		{ h: boundary.rightH, v: boundary.frontV }
+	  ];
+	} else {
+	  vertices = [
+		{ h: -boundary.leftH, v: 0 },
+		{ h: boundary.rightH, v: 0 },
+		{ h: -boundary.leftH, v: boundary.frontV },
+		{ h: boundary.rightH, v: boundary.frontV }
+	  ];
+	}
+	
+	// 格式化为 {x1,y1,x2,y2,x3,y3,x4,y4} 格式
+	return `{${vertices.map(v => `${Math.round(v.h)},${Math.round(v.v)}`).join(',')}}`;
+  }
+  
+  /**
+   * 格式化区域配置
+   */
+  function formatAreaConfig(areaId: number, areaType: number, vertices: RadarPoint[]): string {
+	// 格式化为 {areaId,areaType,x1,y1,x2,y2,x3,y3,x4,y4}
+	return `{${areaId},${areaType},${vertices.map(v => `${Math.round(v.h)},${Math.round(v.v)}`).join(',')}}`;
+  }
+  
+  /**
+   * 比较雷达视图和雷达属性，生成需要安装的配置差异
+   */
+  export function compareConfigs(radarView: RadarView, radarProperties: Record<string, string>): Record<string, string> {
+	const differences: Record<string, string> = {};
+	
+	// 检查基本配置
+	const basicKeys = ['radar_install_style', 'radar_install_height', 'rectangle'];
+	basicKeys.forEach(key => {
+	  if (radarView[key] !== radarProperties[key]) {
+		differences[key] = radarView[key];
+	  }
+	});
+	
+	// 检查区域配置
+	Object.keys(radarView).forEach(key => {
+	  if (key.startsWith('declare_area_') && radarView[key] !== radarProperties[key]) {
+		differences[key] = radarView[key];
+	  }
+	});
+	
+	// 检查需要删除的区域
+	Object.keys(radarProperties).forEach(key => {
+	  if (key.startsWith('declare_area_') && !radarView[key]) {
+		// 使用空区域类型0表示删除
+		const areaId = parseInt(key.replace('declare_area_', ''));
+		differences[key] = `{${areaId},0,0,0,0,0,0,0,0,0}`;
+	  }
+	});
+	
+	return differences;
+  }
+
+
+/**
+ * 解析雷达边界字符串为边界值对象
+ * 例如: "{-300,-200,300,-200,-300,200,300,200}" 
+ * @param boundaryStr 边界字符串
+ * @returns 包含leftH, rightH, frontV, rearV的对象
+ */
+export function parseBoundaryString(boundaryStr: string) {
+	// 移除大括号并分割字符串
+	const values = boundaryStr.replace(/[{}]/g, '').split(',').map(Number);
+	
+	// 如果分割后的值不足8个（4个顶点的x,y坐标），返回默认值
+	if (values.length < 8) {
+	  console.warn("边界字符串格式不正确:", boundaryStr);
+	  return { leftH: 300, rightH: 300, frontV: 200, rearV: 200 };
+	}
+	
+	// 根据雷达坐标系解析边界值
+	// 顶点顺序通常是: 左上, 右上, 左下, 右下 (v1, v2, v3, v4)
+	// v1={x1,y1}, v2={x2,y2}, v3={x3,y3}, v4={x4,y4}
+	return {
+	  leftH: Math.abs(values[2]),  // x2 (右上角的x坐标，正值)
+	  rightH: Math.abs(values[0]), // x1 (左上角的x坐标，负值取绝对值)
+	  frontV: values[7],           // y4 (右下角的y坐标)
+	  rearV: Math.abs(values[1])   // y1 (左上角的y坐标，负值取绝对值)
+	};
+  }
+  
+  /**
+   * 解析区域字符串为区域配置对象
+   * 例如: "{0,5,-100,80,100,80,-100,180,100,180}"
+   * @param areaStr 区域字符串
+   * @param radar 雷达对象
+   * @returns 区域配置对象
+   */
+  export function parseAreaString(areaStr: string, radar: ObjectProperties) {
+	// 移除大括号并分割字符串
+	const values = areaStr.replace(/[{}]/g, '').split(',').map(Number);
+	
+	// 区域字符串至少应该包含区域ID、类型和4个顶点的坐标
+	if (values.length < 10) {
+	  console.warn("区域字符串格式不正确:", areaStr);
+	  return null;
+	}
+	
+	const areaId = values[0];
+	const areaType = values[1];
+	
+	// 提取顶点坐标 (雷达坐标系)
+	const vertices = [
+	  { h: values[2], v: values[3] }, // 顶点1
+	  { h: values[4], v: values[5] }, // 顶点2
+	  { h: values[6], v: values[7] }, // 顶点3
+	  { h: values[8], v: values[9] }  // 顶点4
+	];
+	
+	// 将雷达坐标系转换为画布坐标系
+	const canvasVertices = vertices.map(vertex => toCanvasCoordinate(vertex, radar));
+	
+	return {
+	  id: areaId,
+	  type: areaType,
+	  vertices: canvasVertices
+	};
+  }
+  
+  

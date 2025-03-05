@@ -668,9 +668,10 @@ const drawObjects = (ctx: CanvasRenderingContext2D) => {
   // 在所有对象绘制完成后，输出雷达报告
   // 在所有对象绘制完成后，输出雷达报告
   const radar = objectsStore.objects.find((obj) => obj.typeName === "Radar");
+ /* 
   if (radar) {
     const report = generateRadarReport(radar, objectsStore.objects);
-    /*if (report) {
+    if (report) {
       // report 可能为 null
       console.log("Radar Report:", {
         // 雷达基本信息
@@ -697,8 +698,9 @@ const drawObjects = (ctx: CanvasRenderingContext2D) => {
           ),
         })),
       });
-    }*/
+    }
   }
+  */
 
     // 最后绘制人员
 	drawPersons(ctx);

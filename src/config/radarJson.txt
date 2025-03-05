@@ -1,0 +1,44 @@
+{
+  "radarViews": {
+    "Radar_1738855996756_zlszeylr4": {
+      "radar_func_ctrl": "7",
+      "radar_install_style": "1",
+      "radar_install_height": "16",
+      "rectangle": "{50,50,250,50,250,250,50,250}",
+      "declare_area_TV": "{0,3,20,20,22,20,20,22,22,22}",
+      "declare_area_Door201": "{1,4,-5,35,5,35,-5,40,5,40}"
+    }
+  },
+  "radarProperties": {
+    "Radar_1738855996756_zlszeylr4": {
+      "radar_func_ctrl": "15",
+      "radar_install_style": "0",
+      "radar_install_height": "28",
+      "rectangle": "{-300,-100,300,-100,-300,200,300,200}",
+      "app_compile_time": "Apr 22 2024-14:36:29",
+      "radar_compile_time": "Mar 18 2024 10:41:11",
+      "accelera": "36.74:9.97:-38.52:1",
+      "type": "TSL60G442",
+      "sfver": "2.0",
+      "radarsfver": "2.3",
+      "mac": "AA:BB:CC:DD:EE:FF"
+    }
+  },
+  "installConfig": {
+    "Radar_1738855996756_zlszeylr4": {
+      "radar_func_ctrl": "7",
+      "radar_install_style": "1",
+      "radar_install_height": "16",
+      "rectangle": "{50,50,250,50,250,250,50,250}"
+    }
+  }
+}
+
+
+对于区域声明，遵循您提出的命名约定：
+
+declare_area_[ObjectType][ObjectName]
+如果ObjectType和ObjectName相同，则简化为declare_area_[ObjectName]
+
+检测边界格式保持为：
+Copy"rectangle": "{x1,y1,x2,y2,x3,y3,x4,y4}"

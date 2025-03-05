@@ -1,0 +1,38 @@
+{
+	"properties": {
+	  "radar_func_ctrl": "15",
+	  "radar_install_style": "0",
+	  "radar_install_height": "25",
+	  "rectangle": "{50,50,250,50,250,250,50,250}",
+	  "declare_area": "{0,3,20,20,22,20,20,22,22,22},{1,4,-5,35,5,35,-5,40,5,40},",
+	  "fall_param": "AAAAAAAAAAAAAAAAAAAAAA==",
+	  "heart_breath_param": "BBBBBBBBBBBBBBBBBBBBBB==",
+	  "app_compile_time": "Apr 22 2024-14:36:29",
+	  "radar_compile_time": "Mar 18 2024 10:41:11",
+	  "accelera": "36.74:9.97:-38.52:1",
+	  "type": "TSL60G442",
+	  "sfver": "2.0",
+	  "radarsfver": "2.3",
+	  "mac": "AA:BB:CC:DD:EE:FF",
+	  "ip_port": "192.168.1.100:1060",
+	  "ssid_password": "WiFi_SSID:Password123"
+	},
+	"description": {
+		"radar_func_ctrl": "Operation Mode (3: Person Trajectory, 7: Fall Detection, 11: Breathing & Sleep, 15: Full Function)",
+		"radar_install_style": "Installation Method (0: Ceiling Mount, 1: Side Mount)",
+		"radar_install_height": "Installation Height (Unit: Decimeters, Range: 15-33)",
+		"rectangle": "Detection Boundary (Format: x1,y1,x2,y2,x3,y3,x4,y4, Unit: Decimeters)",
+		"declare_area": "Area Settings (Format: Area ID, Area Type, x1,y1,x2,y2,x3,y3,x4,y4)",
+		"fall_param": "Fall Detection Parameters (16-byte array, BASE64 encoded)",
+		"heart_breath_param": "Breathing & Heart Rate Parameters (16-byte array, BASE64 encoded)",
+		"app_compile_time": "Communication Firmware Compilation Time",
+		"radar_compile_time": "Radar Firmware Compilation Time",
+		"accelera": "Radar Tilt Angle (Format: x:y:z:Calibration Flag)",
+		"type": "Device Type (TSL60G442 for Wi-Fi Version, TSL60G4G for 4G Version)",
+		"sfver": "Main Control Version (2.0 for HC2 Devices, 2.6 for TK2 Devices)",
+		"radarsfver": "Radar Version (1.0 or 2.3)",
+		"mac": "Device MAC Address",
+		"ip_port": "Platform Address (Format: Server Address:Port)",
+		"ssid_password": "WiFi Information (Format: SSID:Password)"	  
+	}
+  }

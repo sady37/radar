@@ -220,3 +220,29 @@ export interface RadarPoint {
 	// 雷达配置（可选）
 	radar?: ObjectProperties;
   } 
+
+  // 雷达视图类型
+export interface RadarView {
+	radar_install_style: string;
+	radar_install_height: string;
+	rectangle: string;
+	[key: string]: string; // 区域配置
+  }
+  
+  // 雷达属性类型
+  export interface RadarProperties {
+	radar_func_ctrl: string;
+	radar_install_style: string;
+	radar_install_height: string;
+	rectangle: string;
+	app_compile_time?: string;
+	radar_compile_time?: string;
+	accelera?: string;
+	type?: string;
+	sfver?: string;
+	radarsfver?: string;
+	mac?: string;
+	ip_port?: string;
+	ssid_password?: string;
+	[key: string]: string | undefined; // 其他属性
+  }
