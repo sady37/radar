@@ -3,6 +3,7 @@ import { defineStore } from "pinia";
 import { useObjectsStore } from "./objects";
 import type { RadarView, RadarProperties, ObjectProperties } from "./types";
 import { generateRadarView,parseBoundaryString, parseAreaString, toCanvasCoordinate } from "../utils/radarUtils";
+import { RadarApiService } from "../services/radarApiService";
 
 export const useRadarConfigStore = defineStore("radarConfig", {
   state: () => ({
@@ -120,7 +121,7 @@ export const useRadarConfigStore = defineStore("radarConfig", {
     // 发送雷达配置到设备
     async sendRadarConfig(radarId: string) {
       if (!this.installConfigs[radarId] || Object.keys(this.installConfigs[radarId]).length === 0) {
-        return { success: true, message: '无需更新配置' };
+        return { success: true, message: 'No configuration updates needed' };
       }
       
       this.configSending = true;
@@ -128,20 +129,17 @@ export const useRadarConfigStore = defineStore("radarConfig", {
       this.lastSentRadarId = radarId;
       
       try {
-        // 这里应该是实际发送配置到雷达设备的API调用
-        // const response = await radarService.sendConfig(radarId, this.installConfigs[radarId]);
+        // 使用雷达API服务发送配置
+        const radarApiService = new RadarApiService();
+        const response = await radarApiService.sendRadarConfig(radarId, this.installConfigs[radarId]);
         
-        // 模拟API调用延迟
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        // 模拟成功响应
         this.configStatus = 'success';
         this.lastSentTime = new Date();
         
-        return { success: true };
+        return { success: true, response };
       } catch (error) {
         this.configStatus = 'error';
-        console.error('发送雷达配置失败:', error);
+        console.error('Failed to send radar configuration:', error);
         return { success: false, error };
       } finally {
         this.configSending = false;
@@ -153,29 +151,12 @@ export const useRadarConfigStore = defineStore("radarConfig", {
       this.configStatus = 'refreshing';
       
       try {
-        // 这里应该是实际查询雷达设备属性的API调用
-        // const properties = await radarService.getProperties(radarId);
-        
-        // 模拟API调用延迟
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        
-        // 模拟属性查询结果 - 实际应该用API返回的数据
-        const mockProperties: RadarProperties = {
-          radar_func_ctrl: "15",
-          radar_install_style: "0",
-          radar_install_height: "25",
-          rectangle: "{-300,-200,300,-200,-300,200,300,200}",
-          app_compile_time: "May 01 2025-10:30:15",
-          radar_compile_time: "Apr 15 2025 14:22:33",
-          accelera: "0.74:1.97:-0.52:1",
-          type: "TSL60G442",
-          sfver: "2.0",
-          radarsfver: "2.3",
-          mac: "00:11:22:33:44:55"
-        };
+        // 使用真实的雷达API服务查询
+        const radarApiService = new RadarApiService();
+        const properties = await radarApiService.getRadarProperties(radarId);
         
         // 更新雷达属性
-        this.updateRadarProperties(radarId, mockProperties);
+        this.updateRadarProperties(radarId, properties);
         
         // 清除安装配置（因为已更新属性）
         if (this.installConfigs[radarId]) {
@@ -191,10 +172,10 @@ export const useRadarConfigStore = defineStore("radarConfig", {
           }
         }, 5000);
         
-        return { success: true };
+        return { success: true, properties };
       } catch (error) {
         this.configStatus = 'error';
-        console.error('获取雷达状态失败:', error);
+        console.error('Failed to get radar status:', error);
         return { success: false, error };
       }
     },
@@ -254,7 +235,7 @@ export const useRadarConfigStore = defineStore("radarConfig", {
         // 返回模板数据 - 在实际应用中可直接用于更新视图
         return { success: true, template: mockTemplate };
       } catch (error) {
-        console.error('加载安装模板失败:', error);
+        console.error('Failed to load installation template:', error);
         return { success: false, error };
       }
     }
@@ -275,13 +256,13 @@ export async function synchronizeCanvasWithRadar(radarId: string) {
 	// 获取雷达属性
 	const radarProps = radarConfigStore.radarProperties[radarId];
 	if (!radarProps) {
-	  return { success: false, message: '无法获取雷达属性' };
+	  return { success: false, message: 'Cannot get radar properties' };
 	}
 	
 	// 在画布中查找雷达对象
 	const radar = objectsStore.objects.find(obj => obj.id === radarId && obj.typeName === 'Radar');
 	if (!radar) {
-	  return { success: false, message: '画布中未找到雷达对象' };
+	  return { success: false, message: 'Radar object not found in canvas' };
 	}
 	
 	// 解析安装方式
@@ -312,12 +293,12 @@ export async function synchronizeCanvasWithRadar(radarId: string) {
 	  }
 	});
 	
-	console.log(`雷达基本属性已同步 - 安装方式: ${installStyle}, 高度: ${heightValue}厘米`);
-	console.log(`边界设置: leftH=${boundaryValues.leftH}, rightH=${boundaryValues.rightH}, frontV=${boundaryValues.frontV}, rearV=${boundaryValues.rearV}`);
+	console.log(`Radar basic properties synchronized - Installation method: ${installStyle}, Height: ${heightValue}cm`);
+	console.log(`Boundary settings: leftH=${boundaryValues.leftH}, rightH=${boundaryValues.rightH}, frontV=${boundaryValues.frontV}, rearV=${boundaryValues.rearV}`);
 	
 	return { 
 	  success: true, 
-	  message: '雷达基本属性已同步到画布',
+	  message: 'Radar basic properties synchronized to canvas',
 	  details: {
 		installStyle,
 		height: heightValue,
@@ -338,13 +319,13 @@ export async function synchronizeCanvasWithRadar(radarId: string) {
 	// 获取雷达属性
 	const radarProps = radarConfigStore.radarProperties[radarId];
 	if (!radarProps) {
-	  return { success: false, message: '无法获取雷达属性' };
+	  return { success: false, message: 'Cannot get radar properties' };
 	}
 	
 	// 获取雷达对象
 	const radar = objectsStore.objects.find(obj => obj.id === radarId);
 	if (!radar) {
-	  return { success: false, message: '画布中未找到雷达对象' };
+	  return { success: false, message: 'Radar object not found in canvas' };
 	}
 	
 	// 1. 收集画布中的所有关联对象 (除雷达外的配置对象)
@@ -373,7 +354,7 @@ export async function synchronizeCanvasWithRadar(radarId: string) {
 		// 画布上有，雷达上没有 - 说明设置失败，删除画布对象
 		objectsStore.deleteObject(obj.id);
 		removedFromCanvas.push(obj.name);
-		console.log(`区域设置失败，已从画布删除: ${obj.name} (类型: ${obj.typeName})`);
+		console.log(`Area setup failed, removed from canvas: ${obj.name} (Type: ${obj.typeName})`);
 	  }
 	});
 	
@@ -394,7 +375,7 @@ export async function synchronizeCanvasWithRadar(radarId: string) {
 		pendingDeleteConfig[areaKey] = `{${areaId},0,0,0,0,0,0,0,0,0}`;
 		pendingRemoveFromRadar.push(areaName);
 		
-		console.log(`发现雷达上多余区域，已标记删除: ${areaName}`);
+		console.log(`Found excess area on radar, marked for deletion: ${areaName}`);
 	  }
 	});
 	
@@ -410,7 +391,7 @@ export async function synchronizeCanvasWithRadar(radarId: string) {
 	
 	return { 
 	  success: true, 
-	  message: '区域配置已同步', 
+	  message: 'Area configuration synchronized', 
 	  details: {
 		removedFromCanvas,
 		pendingRemoveFromRadar
@@ -455,7 +436,7 @@ export async function synchronizeCanvasWithRadar(radarId: string) {
 	  radarConfigStore.configStatus = 'completed';
 	  return { 
 		success: true, 
-		message: '画布已完全同步到雷达状态',
+		message: 'Canvas has been fully synchronized with radar status',
 		details: {
 		  ...basicResult.details,
 		  ...areasResult.details
@@ -463,11 +444,11 @@ export async function synchronizeCanvasWithRadar(radarId: string) {
 	  };
 	} catch (error) {
 	  radarConfigStore.configStatus = 'error';
-	  console.error('同步到画布失败:', error);
+	  console.error('Synchronization to canvas failed:', error);
 	  return { 
 		success: false, 
 		error, 
-		message: '同步过程中发生错误'
+		message: 'Error during synchronization process'
 	  };
 	}
   }

@@ -1,4 +1,3 @@
-// src/components/RadarConfigDialog.vue
 <template>
 	<div class="config-dialog-overlay" @click.self="$emit('close')">
 	  <div class="config-dialog">
@@ -21,10 +20,10 @@
 				  </tr>
 				</thead>
 				<tbody>
-				  <tr v-for="(value, key) in differences" :key="key">
-					<td>{{ formatSettingName(key) }}</td>
-					<td>{{ formatSettingValue(key, value) }}</td>
-					<td>{{ formatSettingValue(key, getDeviceValue(key)) }}</td>
+				  <tr v-for="(value, key) in differences" :key="key.toString()">
+					<td>{{ formatSettingName(key.toString()) }}</td>
+					<td>{{ formatSettingValue(key.toString(), value) }}</td>
+					<td>{{ formatSettingValue(key.toString(), getDeviceValue(key.toString())) }}</td>
 				  </tr>
 				</tbody>
 			  </table>
@@ -65,11 +64,11 @@
 			<div class="status-icon warning">!</div>
 			<p>Some configuration items failed to apply</p>
 			<div class="status-list">
-			  <div v-for="(item, index) in differences.succeededItems" :key="`success-${index}`" class="status-item success">
+			  <div v-for="(item, index) in successItems" :key="`success-${index}`" class="status-item success">
 				<span class="status-icon small">✓</span>
 				<span>{{ formatSettingName(item.key) }}</span>
 			  </div>
-			  <div v-for="(item, index) in differences.failedItems" :key="`fail-${index}`" class="status-item error">
+			  <div v-for="(item, index) in failedItems" :key="`fail-${index}`" class="status-item error">
 				<span class="status-icon small">×</span>
 				<span>{{ formatSettingName(item.key) }} - {{ item.reason || 'Failed to apply' }}</span>
 			  </div>
@@ -93,13 +92,33 @@
   </template>
   
   <script setup lang="ts">
-  import { computed, ref, watch } from 'vue';
+  import { ref, watch } from 'vue';
   
-  // Props
+  // Define more specific types to replace 'any'
+  type ConfigValue = string | number | boolean | null | undefined;
+  
+  interface ConfigItem {
+	key: string;
+	value: ConfigValue;
+	originalValue: ConfigValue;
+	reason?: string;
+  }
+  
+  interface ConfigResult {
+	succeededItems?: ConfigItem[];
+	failedItems?: ConfigItem[];
+  }
+  
+  // 定义类型安全的差异字典类型
+  interface StringKeyDictionary {
+	[key: string]: ConfigValue;
+  }
+  
+  // Props with improved typing
   interface Props {
 	title: string;
 	state: string;
-	differences?: Record<string, any>;
+	differences?: StringKeyDictionary & Partial<ConfigResult>;
 	errorMessage?: string;
   }
   
@@ -109,6 +128,19 @@
 	differences: () => ({}),
 	errorMessage: ''
   });
+  
+  // Computed properties for accessing result items
+  const successItems = ref<ConfigItem[]>([]);
+  const failedItems = ref<ConfigItem[]>([]);
+  
+  // Watch for changes in differences to update success and failed items
+  watch(() => props.differences, (newVal) => {
+	if (newVal) {
+	  // TypeScript treats this as safe because we're using a Partial type
+	  successItems.value = newVal.succeededItems || [];
+	  failedItems.value = newVal.failedItems || [];
+	}
+  }, { immediate: true });
   
   // Emits
   defineEmits(['close', 'sync-to-device', 'ignore', 'retry']);
@@ -158,7 +190,11 @@
 	return key;
   }
   
-  function formatSettingValue(key: string, value: any): string {
+  function formatSettingValue(key: string, value: ConfigValue): string {
+	if (value === undefined || value === null) {
+	  return '';
+	}
+	
 	if (key === 'radar_install_style') {
 	  return value === '0' ? 'Ceiling Mount' : 'Wall Mount';
 	}
@@ -174,7 +210,7 @@
 	return String(value);
   }
   
-  function getDeviceValue(key: string): string {
+  function getDeviceValue(key: string): ConfigValue {
 	// In a real implementation, this would come from props.differences
 	// For now, return a placeholder
 	return 'Different Value';
