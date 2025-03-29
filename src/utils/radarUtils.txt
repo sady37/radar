@@ -198,39 +198,30 @@ export function generateRadarReport(radar: ObjectProperties | null, objects: Obj
   }
 
 //将人的雷达坐标转换为画布坐标
-
-
-// 雷达坐标系 -> 画布坐标系
 export function toCanvasCoordinate(radarPoint: RadarPoint, radar: ObjectProperties): Point {
-    // 1. 计算逆时针旋转弧度（直接使用正角度）
     const rad = (radar.rotation * Math.PI) / 180;
-
-    // 2. 直接应用旋转矩阵（补偿H轴方向）
-    // 注意：Canvas的X轴右为正，雷达H轴左为正，故旋转矩阵需要调整符号
-    const rotatedX = radarPoint.h * Math.cos(rad) + radarPoint.v * Math.sin(rad);
-    const rotatedY = -radarPoint.h * Math.sin(rad) + radarPoint.v * Math.cos(rad);
-
-    // 3. 平移到画布坐标系原点
+    // 先旋转
+    const rotated = {
+        x: radarPoint.h * Math.cos(rad) - radarPoint.v * Math.sin(rad),
+        y: radarPoint.h * Math.sin(rad) + radarPoint.v * Math.cos(rad)
+    };
+    // 再平移
     return {
-        x: radar.position.x - rotatedX, // X轴方向补偿（雷达H左正 → 画布X左正）
-        y: radar.position.y + rotatedY  // Y轴方向一致（雷达V下正 → 画布Y下正）
+        x: radar.position.x + rotated.x,
+        y: radar.position.y + rotated.y
     };
 }
 
-// 画布坐标系 -> 雷达坐标系（直接转换）
 export function toRadarCoordinate(canvasX: number, canvasY: number, radar: ObjectProperties): RadarPoint {
-    // 1. 平移到雷达原点
-    const dx = radar.position.x - canvasX; // 补偿X轴方向
-    const dy = canvasY - radar.position.y; // Y轴方向一致
-
-    // 2. 计算逆时针旋转弧度
-    const rad = (radar.rotation * Math.PI) / 180;
-
-    // 3. 应用逆旋转矩阵（补偿H轴方向）
-    const h = dx * Math.cos(rad) - dy * Math.sin(rad);
-    const v = dx * Math.sin(rad) + dy * Math.cos(rad);
-
-    return { h, v };
+    // 先平移到原点
+    const dx = canvasX - radar.position.x;
+    const dy = canvasY - radar.position.y;
+    // 再反向旋转
+    const rad = (-radar.rotation * Math.PI) / 180;
+    return {
+        h: dx * Math.cos(rad) - dy * Math.sin(rad),
+        v: dx * Math.sin(rad) + dy * Math.cos(rad)
+    };
 }
 
 

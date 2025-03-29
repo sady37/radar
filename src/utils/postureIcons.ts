@@ -141,14 +141,14 @@ export const VITAL_SIGN_CONFIGS = {
 
 // 导出状态判断函数
 export const getHeartRateStatus = (rate: number) => {
-	if (rate === undefined || rate === null || isNaN(rate)) return 'undefined';
+	if (rate === undefined || rate === null || isNaN(rate)||rate ===0||rate ===-255) return 'undefined';
 	if (rate >= 60 && rate <= 95) return 'normal';
 	if ((rate >= 45 && rate <= 59) || (rate >= 96 && rate <= 105)) return 'warning';
 	return 'danger';
    };
    
    export const getBreathingStatus = (rate: number) => {
-	if (rate === undefined || rate === null || isNaN(rate)) return 'undefined';
+	if (rate === undefined || rate === null || isNaN(rate)||rate ===0||rate ===-255) return 'undefined';
 	if (rate >= 12 && rate <= 20) return 'normal';
 	if ((rate >= 8 && rate <= 11) || (rate >= 21 && rate <= 26)) return 'warning';
 	return 'danger';

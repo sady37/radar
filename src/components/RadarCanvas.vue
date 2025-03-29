@@ -392,7 +392,7 @@ const drawObject = (ctx: CanvasRenderingContext2D, obj: ObjectProperties) => {
     canvasStore.width / 2 + obj.position.x * scale.value,
     obj.position.y * scale.value
   );
-  ctx.rotate((obj.rotation * Math.PI) / 180);
+  ctx.rotate((-obj.rotation * Math.PI) / 180);
   const halfLength = (obj.length * scale.value) / 2;
   const halfWidth = (obj.width * scale.value) / 2;
 

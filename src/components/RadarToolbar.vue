@@ -245,10 +245,10 @@
 		</div>
   
 		<div class="rotation-control">
-		  <button class="rot-btn" @click="rotate(-90)" :disabled="isLocked">-90°</button>
-		  <button class="rot-btn" @click="rotate(-15)" :disabled="isLocked">-15°</button>
-		  <button class="rot-btn" @click="rotate(15)" :disabled="isLocked">+15°</button>
-		  <button class="rot-btn" @click="rotate(90)" :disabled="isLocked">+90°</button>
+			<button class="rot-btn" @click="rotate(90)" :disabled="isLocked">↺90°°</button>
+			<button class="rot-btn" @click="rotate(15)" :disabled="isLocked">↺15°</button>
+			<button class="rot-btn" @click="rotate(-15)" :disabled="isLocked">↻15°</button>
+			<button class="rot-btn" @click="rotate(-90)" :disabled="isLocked">↻90°</button>
 		</div>
 	  </div>
 	</div>

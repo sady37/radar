@@ -191,3 +191,68 @@ src/
 	Area exists in both but with different configurations (update needed - requiring deletion then addition)
 配置失败时：
 	仅是弹出所有配置的状态，不进行处理
+
+
+20250329
+	1.修改UI,明确旋转方向  RadarToolbar.vue
+			<div class="rotation-control">
+			<button class="rot-btn" @click="rotate(90)" :disabled="isLocked">↺90°°</button>
+			<button class="rot-btn" @click="rotate(15)" :disabled="isLocked">↺15°</button>
+			<button class="rot-btn" @click="rotate(-15)" :disabled="isLocked">↻15°</button>
+			<button class="rot-btn" @click="rotate(-90)" :disabled="isLocked">↻90°</button>
+		</div>
+	2. RadarCanvas.vue
+	// 原代码（方向可能错误）
+	ctx.rotate((obj.rotation * Math.PI) / 180); // ❌
+	// 修改后（确保逆时针为正方向）
+	ctx.rotate((-obj.rotation * Math.PI) / 180); // ✅ 增加负号
+
+	3.之前的转换未考虑H/X相反，修正	// src/utils/radarUtils.ts
+
+		// 雷达坐标系 -> 画布坐标系（直接转换，无 adjustedH）
+		export function toCanvasCoordinate(radarPoint: RadarPoint, radar: ObjectProperties): Point {
+		    // 1. 计算逆时针旋转弧度（直接使用正角度）
+		    const rad = (radar.rotation * Math.PI) / 180;
+
+		    // 2. 直接应用旋转矩阵（补偿H轴方向）
+		    // 注意：Canvas的X轴右为正，雷达H轴左为正，故旋转矩阵需要调整符号
+		    const rotatedX = radarPoint.h * Math.cos(rad) + radarPoint.v * Math.sin(rad);
+		    const rotatedY = -radarPoint.h * Math.sin(rad) + radarPoint.v * Math.cos(rad);
+
+		    // 3. 平移到画布坐标系原点
+		    return {
+		        x: radar.position.x - rotatedX, // X轴方向补偿（雷达H左正 → 画布X左正）
+		        y: radar.position.y + rotatedY  // Y轴方向一致（雷达V下正 → 画布Y下正）
+		    };
+		}
+
+		// 画布坐标系 -> 雷达坐标系（直接转换）
+		export function toRadarCoordinate(canvasX: number, canvasY: number, radar: ObjectProperties): RadarPoint {
+		    // 1. 平移到雷达原点
+		    const dx = radar.position.x - canvasX; // 补偿X轴方向
+		    const dy = canvasY - radar.position.y; // Y轴方向一致
+
+		    // 2. 计算逆时针旋转弧度
+		    const rad = (radar.rotation * Math.PI) / 180;
+
+		    // 3. 应用逆旋转矩阵（补偿H轴方向）
+		    const h = dx * Math.cos(rad) - dy * Math.sin(rad);
+		    const v = dx * Math.sin(rad) + dy * Math.cos(rad);
+
+		    return { h, v };
+		}
+
+
+
+	4.避免heart/breathe 无效值0，-255   //src/utils/postureIcons.ts
+	增加||rate ===0||rate ===-255， 0值即表示非人类，检测不到了
+	export const getHeartRateStatus = (rate: number) => {
+	if (rate === undefined || rate === null || isNaN(rate)||rate ===0||rate ===-255) return 'undefined';
+   export const getBreathingStatus = (rate: number) => {
+	if (rate === undefined || rate === null || isNaN(rate)||rate ===0||rate ===-255) return 'undefined';
+
+
+
+	其它：
+		sleep: {
+	  undefined: { type: "svg" as const, iconPath: iconMap["AwakeUnknow"], size: 24, showLabel: false },  检查是不是图片没打包上去
