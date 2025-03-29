@@ -193,7 +193,7 @@ src/
 	仅是弹出所有配置的状态，不进行处理
 
 
-20250329
+20250329-v1   "修复坐标"
 	1.修改UI,明确旋转方向  RadarToolbar.vue
 			<div class="rotation-control">
 			<button class="rot-btn" @click="rotate(90)" :disabled="isLocked">↺90°°</button>
@@ -251,8 +251,29 @@ src/
    export const getBreathingStatus = (rate: number) => {
 	if (rate === undefined || rate === null || isNaN(rate)||rate ===0||rate ===-255) return 'undefined';
 
+20250329-v2   "增加键盘移动功能"
+	把坐地SitGroundSuspect.svg 变的更深一点， #e29950 (更深的橘红色)
+	从objectTypes数组中移除了Moving类型
+	在模板按钮区域新增了Demo按钮，绑定原有的toggleTest方法
+	将原Test按钮改为Save按钮，添加颜色变化动画效果
+	去Moving, 移test->Moving,  Demo
+	增加saveButton替换原test
 
+	// 添加保存处理
+	const saveConfig = () => {
+	  isSaved.value = true;
+	  setTimeout(() => isSaved.value = false, 1000); // 1秒后恢复颜色
+	  saveRoom(); // 调用原有保存逻辑
+	};
 
-	其它：
-		sleep: {
-	  undefined: { type: "svg" as const, iconPath: iconMap["AwakeUnknow"], size: 24, showLabel: false },  检查是不是图片没打包上去
+      .test-btn {
+        width: 46px;
+        height: 23px;
+        border: 1px solid #ccc;
+        border-radius: 2px;
+        font-size: 12px;
+        cursor: pointer;
+        &:hover {
+          background: #b3d7f5;
+        }
+      }

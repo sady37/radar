@@ -24,21 +24,26 @@
 			  </div>
 			  <span class="visually-hidden">Radar</span>
 			</template>
-			<template v-else-if="obj.typeName === 'Moving'">
-			  <div class="m-icon">Moving</div>
-			</template>
 			<template v-else>
 			  {{ obj.label }}   
 			</template>
 		  </button>
-		</div>
+		  <!-- 新增Demo按钮 -->
+		<button
+			class="template-btn demo-btn"
+			:class="{ 'active': isTesting }"
+			@click="toggleTest"
+		  >
+			Demo
+		</button>
+	</div>
   
 		<div class="action-buttons">
 		  <button class="action-btn create-btn" @click="createObject" :disabled="editMode !== 'template'">Create</button>
 		  <button class="action-btn delete-btn" @click="deleteObject" :disabled="editMode !== 'object'">Delete</button>
-		  <button class="action-btn test-btn" :class="{ 'active': isTesting }" @click="toggleTest">Test</button>
-		  <button class="layout-btn saveRoom-btn" @click="saveRoom">saveRm</button>
-		  <button class="layout-btn loadRoom-btn" type="button" @click="loadRoom($event)">loadRm</button>
+		  <button class="action-btn save-btn" :class="{ 'saved': isSaved }" @click="saveConfig">Save</button>
+		  <button class="layout-btn saveRoom-btn" @click="saveRoom">Export</button>
+		  <button class="layout-btn loadRoom-btn" type="button" @click="loadRoom($event)">Import</button>
 		  <button class="layout-btn send-btn" @click="sendConfig" :disabled="!hasSelectedRadar">Send</button>
 		</div>
 	  </div>
@@ -245,7 +250,7 @@
 		</div>
   
 		<div class="rotation-control">
-			<button class="rot-btn" @click="rotate(90)" :disabled="isLocked">↺90°°</button>
+			<button class="rot-btn" @click="rotate(90)" :disabled="isLocked">↺90°</button>
 			<button class="rot-btn" @click="rotate(15)" :disabled="isLocked">↺15°</button>
 			<button class="rot-btn" @click="rotate(-15)" :disabled="isLocked">↻15°</button>
 			<button class="rot-btn" @click="rotate(-90)" :disabled="isLocked">↻90°</button>
@@ -267,6 +272,7 @@ import type { ObjectProperties, RoomLayout } from "../stores/types";
 import { useRadarDataStore } from '../stores/radarData';
 import { RadarConfigManager } from "../services/radarConfigManager";
 import { useRadarConfigStore } from "../stores/radarConfig";
+import { onMounted, onUnmounted } from "vue";
 
 
 
@@ -280,6 +286,7 @@ const radarDataStore = useRadarDataStore();
 const isTesting = ref(false);
 
 
+
 //触发测试
 const toggleTest = () => {
   isTesting.value = !isTesting.value;
@@ -290,6 +297,35 @@ const toggleTest = () => {
     radarDataStore.stopDataStream();
   }
 };
+
+// 键盘事件处理函数
+const handleKeyDown = (event: KeyboardEvent) => {
+  if (objectsStore.selectedId && !isLocked.value) {
+    switch (event.key) {
+      case "ArrowUp":
+        move("up");
+        break;
+      case "ArrowDown":
+        move("down");
+        break;
+      case "ArrowLeft":
+        move("left");
+        break;
+      case "ArrowRight":
+        move("right");
+        break;
+    }
+  }
+};
+
+// 添加/移除事件监听
+onMounted(() => {
+  window.addEventListener("keydown", handleKeyDown);
+});
+
+onUnmounted(() => {
+  window.removeEventListener("keydown", handleKeyDown);
+});
 
 //radar同步相关
 // 定义emit
@@ -332,6 +368,8 @@ const sendConfig = async () => {
 
 
 // 4. 状态定义
+// 在状态定义部分添加保存状态
+const isSaved = ref(false);
 
 const objectTypes = [
   {typeValue:2,typeName: "Bed", label: "Bed", defaultLength: 190, defaultWidth: 140 }, //twin:190*90,full:190*140, queen:200*150, 
@@ -341,7 +379,6 @@ const objectTypes = [
   {typeValue:1,typeName: "Wall", label: "Wall", defaultLength: 200, defaultWidth: 5 },   
   {typeValue:3,typeName: "TV", label: "TV", defaultLength: 100, defaultWidth: 20 },        
   {typeValue:20,typeName: "Radar", label: "", defaultLength: 20, defaultWidth: 20 },
-  {typeValue:10, typeName: "Moving", label: "Moving", defaultLength: 43, defaultWidth: 43 },
 ];
 
 const selectedType = ref("");
@@ -813,6 +850,13 @@ const loadRoom = (event: MouseEvent) => {
  input.click();
 };
 
+// 添加保存处理
+const saveConfig = () => {
+  isSaved.value = true;
+  setTimeout(() => isSaved.value = false, 1000); // 1秒后恢复颜色
+  // 这里可以添加实际保存逻辑
+  console.log("Configuration saved");
+};
 
 // defineExpose 扩展为包含 sendConfig
 defineExpose({
@@ -872,6 +916,17 @@ defineExpose({
         &.other {
           background: #d3d3d3;
         }
+		&.demo-btn { 
+	      background: #e6eff8; /* 保持与原Test按钮相同样式 */
+	      color: #333;
+	      &:hover {
+	        background: #b3d7f5;
+	      }
+	      &.active {
+	        border-color: #1890ff;
+	        background: #40a9ff;
+	      }
+	    }
 
         .radar-icon {
           width: 20px;
@@ -950,8 +1005,15 @@ defineExpose({
           background: #ccc;
           cursor: not-allowed;
         }
-        &.test-btn {
+        &.save-btn {
           background: #e6eff8;
+		    background: #e1f7e1; /* 正常状态绿色 */
+           //color: white;
+           transition: background 0.3s;
+           &.saved {
+             background: #9bd07c; /* 保存后稍亮的绿色 */
+             animation: pulse 0.5s;
+           }
         }
       }
 
@@ -1014,17 +1076,6 @@ defineExpose({
         margin-right: 6px;
       }
 
-      .test-btn {
-        width: 46px;
-        height: 23px;
-        border: 1px solid #ccc;
-        border-radius: 2px;
-        font-size: 12px;
-        cursor: pointer;
-        &:hover {
-          background: #b3d7f5;
-        }
-      }
     }
 
     .size-row {
@@ -1278,5 +1329,12 @@ input[type="number"] {
     -webkit-appearance: none;
     margin: 0;
   }
+
+  @keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(0.95); }
+  100% { transform: scale(1); }
+ }
+
 }
 </style>
