@@ -3,16 +3,14 @@
 import { 
 	type PersonData, 
 	type VitalSignData, 
-	type Point, 
 	type RadarPoint,
 	type RobjectProperties,
 	type RoomLayout,
-	type RadarBoundaryVertices,
 	PersonPosture,
   } from "../stores/types";
-  import { toRadarCoordinate, toCanvasCoordinate, isPointInBoundary } from "./radarUtils";
-  import { getHeartRateStatus, getBreathingStatus } from "./postureIcons";
-  import rawTestLayout from '../config/test_layout.json';
+  import { toRadarCoordinate, } from "./radarUtils";
+  import rawTestLayout from '../config/layout-demo.json';
+
   
   // 配置接口定义
   interface RadarServiceConfig {
@@ -31,14 +29,7 @@ import {
 	};
   }
   
-  interface MovementState {
-	startPosition: RadarPoint;
-	endPosition: RadarPoint;
-	startTime: number;
-	duration: number;
-	currentPosture: number;
-	lastPostureChangeTime: number;
-  }
+
   
   export class MockRadarService {
 	// ================ 属性定义 ================
@@ -49,17 +40,21 @@ import {
 	private vitalTimer: number | null = null;
 	private vital: VitalSignData | null = null;
 	private lastVitalData: VitalSignData | null = null; // 用于生理指标渐变
-	private movementState: MovementState | null = null;
+	//private movementState: MovementState | null = null;
 	private lastPostureChangeTime = Date.now();
 	private currentPosture: number | null = null;
 	private currentPosition: RadarPoint | null = null;
 	private postureDuration = 0;
 	private bedPostureDuration = 0;
 	private RadarBoundaryMargin = 20;    // 雷达边界余量
-	private BedMargin = 10;              // 床位边界余量
+	//private BedMargin = 10;              // 床位边界余量
 	private vitalStateStartTime = 0;
 	private currentVitalState: string | null = null;
-  
+	private realDataMode = false;
+	private realData: PersonData[] = [];
+	private realDataIndex = 0; 
+	private readonly SAMPLE_PATH = '/sample.txt';
+
 	constructor(config: RadarServiceConfig = {}) {
 	  // 默认配置初始化
 	  this.config = {
@@ -106,7 +101,89 @@ import {
 		  } as RobjectProperties;
 		}
 	  });	
+
+	  
+	   // 尝试加载真实数据
+	   this.tryLoadRealData();
 	}
+
+
+  // ================ 真实数据加载系统 ================
+  private async tryLoadRealData() {
+    try {
+      // 动态加载真实数据文件（需要配置vite静态资源处理）
+      const response = await fetch(this.getResolvedPath());
+      if (!response.ok) throw new Error('File not found');
+      
+      const rawText = await response.text();
+      this.realData = this.parseRealData(rawText);
+      
+      if (this.realData.length > 0) {
+        this.realDataMode = true;
+        console.log('Using real data mode');
+      }
+    } catch (error) {
+      console.log('Fallback to simulated data');
+      this.realDataMode = false;
+    }
+  }
+
+    // 路径解析方法（兼容开发/生产环境）
+	private getResolvedPath(): string {
+		if (import.meta.env.PROD) {
+		  // 生产环境使用绝对路径
+		  return new URL(this.SAMPLE_PATH, import.meta.url).href;
+		}
+		// 开发环境使用相对路径
+		return new URL(this.SAMPLE_PATH, window.location.href).href;
+	  }
+
+  private parseRealData(rawText: string): PersonData[] {
+	return rawText
+	  .split('\n')
+	  .filter(line => line.trim().startsWith('|'))
+	  .map(line => {
+		const cols = line.split('|').map(c => c.trim());
+		
+		// 安全的数值解析方法
+		const safeParse = (str: string) => {
+		  const num = parseInt(str, 10);
+		  return Number.isNaN(num) ? 0 : num;
+		};
+  
+		return {
+		  id: safeParse(cols[1]),
+		  position: {
+			x: safeParse(cols[4]) * 10, // dm → cm 转换
+			y: safeParse(cols[5]) * 10, // dm → cm 转换
+			z: safeParse(cols[6])
+		  },
+		  remainTime: safeParse(cols[7]),
+		  posture: safeParse(cols[8]),
+		  event: safeParse(cols[9]),
+		  areaId: safeParse(cols[10]),
+		  timestamp: safeParse(cols[11]) // 可选时间戳
+		};
+	  });
+  }
+
+  // 映射真实数据姿态到枚举
+  private mapRealPosture(rawPosture: number): number {
+    const postureMap: Record<number, number> = {
+      1: PersonPosture.Walking,
+      3: PersonPosture.Sitting,
+      4: PersonPosture.Standing,
+	  5: PersonPosture.FallConfirm,
+	  6: PersonPosture.Lying,
+	  7: PersonPosture.SitGroundSuspect,
+	  8: PersonPosture.SitGroundConfirm,
+	  9: PersonPosture.SitUpBed,
+	  10: PersonPosture.SitUpBedSuspect,
+	  11: PersonPosture.SitUpBedConfirm
+    };
+    return postureMap[rawPosture] ?? PersonPosture.Standing;
+  }
+
 
 // ================ 区域管理系统 ================
 private areaSystem = {
@@ -326,6 +403,21 @@ private behaviorSystem = {
 
   // ================ 主要逻辑部分 ================
   generateMockTrackData(): PersonData[] {
+    // 样本数据模式
+    if (this.realDataMode && this.realData.length > 0) {
+		const currentData = this.realData[this.realDataIndex % this.realData.length];
+		this.realDataIndex++;
+		return [{
+		  id: currentData.id,
+		  position: currentData.position,
+		  remainTime: currentData.remainTime,
+		  posture: currentData.posture,
+		  event: currentData.event,
+		  areaId: currentData.areaId,
+		  timestamp: currentData.timestamp || Math.floor(Date.now() / 1000)
+		}];
+	  }
+	
     const currentTime = Date.now();
     
     // 初始化位置或位置无效时重新生成
@@ -377,7 +469,8 @@ private behaviorSystem = {
       remainTime,
       posture: this.currentPosture,
       event: 0,
-      areaId: 0
+      areaId: 0,
+	  timestamp: Math.floor(currentTime / 1000) // UNIX秒级时间戳
     };
    
     // 生理指标生成：只在Lying姿态时生成
@@ -390,27 +483,88 @@ private behaviorSystem = {
    
     return [personData];
   }
-   
-  // ================ 数据流控制 ================
-  startMockDataStream(
+
+  // ================ 时间序列控制 ================
+  private playSampleData(onTrackData: (data: PersonData[]) => void) {
+	const pushNext = () => {
+		const trackData = this.generateMockTrackData();
+		onTrackData(trackData);
+		
+		// 直接调用无参版本
+		const interval = this.calculateSampleInterval();
+		this.timer = window.setTimeout(pushNext, interval);
+	  };
+	  pushNext();
+	}
+
+  private calculateSampleInterval(): number {
+	if (this.realData.length === 0 || this.realDataIndex === 0) {
+	  return 1000; // 默认1秒间隔
+	}
+  
+	// 自动计算当前和上一条数据的时间差
+	const currentIndex = this.realDataIndex % this.realData.length;
+	const prevIndex = (currentIndex === 0) 
+	  ? this.realData.length - 1 
+	  : currentIndex - 1;
+  
+	const current = this.realData[currentIndex];
+	const previous = this.realData[prevIndex];
+	
+	return Math.max(
+	  (current.timestamp - previous.timestamp) * 1000, // 转换为毫秒
+	  100 // 最小间隔100ms
+	);
+  }
+
+  private startSimulationMode(
     onTrackData: (data: PersonData[]) => void,
-    onVitalData: (data: VitalSignData) => void,
-  ): void {
-    this.stopDataStream();
-    
-    // 每秒更新人员数据
+    onVitalData: (data: VitalSignData) => void
+  ) {
+    // 原有模拟模式逻辑
     this.timer = window.setInterval(() => {
-      const trackData = this.generateMockTrackData();
-      onTrackData(trackData);
+      onTrackData(this.generateMockTrackData());
     }, 1000);
-   
-    // 每2秒更新生理指标
+
     this.vitalTimer = window.setInterval(() => {
-      if (this.vital) {
-        onVitalData(this.vital);
-      }
+      if (this.vital) onVitalData(this.vital);
     }, 2000);
   }
+  
+  // ================ 数据流控制 ================
+  startMockDataStream(
+	  onTrackData: (data: PersonData[]) => void,
+	  onVitalData: (data: VitalSignData) => void,
+	): void {
+	  this.stopDataStream();
+
+	  if (this.realDataMode) {
+	    this.realDataIndex = 0; // 重置索引
+	    const playNext = () => {
+	      const data = this.generateMockTrackData();
+	      onTrackData(data);
+	      
+	      // 统一使用无参调用
+	      const interval = this.calculateSampleInterval();
+	      this.timer = window.setTimeout(playNext, interval);
+	    };
+	    playNext();
+	  } else {
+
+	    // 每秒更新人员数据
+	    this.timer = window.setInterval(() => {
+	      const trackData = this.generateMockTrackData();
+	      onTrackData(trackData);
+	    }, 1000);
+	   
+	    // 每2秒更新生理指标
+	    this.vitalTimer = window.setInterval(() => {
+	      if (this.vital) {
+	        onVitalData(this.vital);
+	      }
+	    }, 2000);
+	  }
+	}
    
   // 停止数据流并清理状态
   stopDataStream(): void {

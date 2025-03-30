@@ -73,14 +73,15 @@ export interface RobjectProperties extends Omit<ObjectProperties, 'position'> {
 export interface PersonData {
   id: number; // 0-7 或 88(无人)
   position: {
-    x: number; // 逻辑单位
-    y: number; // 逻辑单位
-    z: number; // 逻辑单位
+    x: number; // 逻辑单位 dm
+    y: number; // 逻辑单位 dm
+    z: number; // 逻辑单位 cm
   };
   remainTime: number; // 0-60秒
   posture: number; // 0-11 姿态
   event: number; // 0-4 事件类型
   areaId: number; // 区域ID
+  timestamp: number; // 新增 UNIX 时间戳（秒）
 }
 
 // 生理指标数据接口

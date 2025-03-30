@@ -252,12 +252,13 @@ src/
 	if (rate === undefined || rate === null || isNaN(rate)||rate ===0||rate ===-255) return 'undefined';
 
 20250329-v2   "增加键盘移动功能"
-	把坐地SitGroundSuspect.svg 变的更深一点， #e29950 (更深的橘红色)
+	把坐地SitGroundSuspect.svg 变的更深一点， #e29950 (更深的橘红色)，带空格的svg重命名,去掉空格,
 	从objectTypes数组中移除了Moving类型
 	在模板按钮区域新增了Demo按钮，绑定原有的toggleTest方法
 	将原Test按钮改为Save按钮，添加颜色变化动画效果
 	去Moving, 移test->Moving,  Demo
 	增加saveButton替换原test
+	
 
 	// 添加保存处理
 	const saveConfig = () => {
@@ -266,14 +267,28 @@ src/
 	  saveRoom(); // 调用原有保存逻辑
 	};
 
-      .test-btn {
-        width: 46px;
-        height: 23px;
-        border: 1px solid #ccc;
-        border-radius: 2px;
-        font-size: 12px;
-        cursor: pointer;
-        &:hover {
-          background: #b3d7f5;
-        }
-      }
+20250329 v3 "mock可以引入真实数据"
+   1.样本数据放到/public/sample.txt，我在mock里直接x,y *10转换为cm
+   2.运行demo时，先找样本文件，如果不对，再去模拟
+   3.检查了一下人体轨迹，1秒1次，心率是2秒刷一次
+   4.修改vite.config.ts  支持服务器部署时
+
+
+
+
+
+开发环境验证：
+npm run dev
+# 检查控制台输出应显示：
+# 成功加载样本数据：N条记录
+# 首条样本：{...}
+生产环境验证：
+
+bash
+复制
+npm run build && npm run preview
+# 检查dist目录结构应包含：
+# dist/
+# ├── config/
+# │   └── sample.xxxxxx.txt
+# └── assets/
